@@ -6,16 +6,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description='This script scatters the thesis data to the faculty thesis files')
 parser.add_argument('file', help='the name of the file to scatter')
+parser.add_argument('destination', help='the destination folder')
 parser.add_argument('-y', '--year',type=int,help='the calendar year of data to be scattered')
 args = parser.parse_args()
 
-# Destination is faculty folder
-if platform.system() == 'Windows':
-	facultyFolder = r"S:\departments\Mechanical & Aerospace Engineering\Faculty"
-else:
-	facultyFolder = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
-	
+facultyFolder = args.destination
 source = args.file
+
 theses = pd.read_excel(source,sheet_name='Data')
 theses = theses[theses["Year"] == args.year]
 

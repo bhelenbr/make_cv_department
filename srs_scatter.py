@@ -22,15 +22,26 @@ new_column_names = {
 
 def merge_proposals(df_new, destination):
 	if exists(destination):
-		df_old = pd.read_excel(
-			destination,
-			index_col="Proposal_ID",
-			sheet_name="Data"
-		)
+		df_old = pd.read_excel(destination,sheet_name="Data",dtype={'Proposal_ID': str})
+		
+		# generate duplicate counters per value
+		dupe_count = df_old.groupby("Proposal_ID").cumcount()
+
+		# map 1 → 'b', 2 → 'c', ...
+		suffix = dupe_count.map(lambda x: "" if x == 0 else chr(ord('a') + x))
+
+		df_old["Proposal_ID"] = df_old["Proposal_ID"] + suffix
+		
+		# set as index
+		df_old = df_old.set_index("Proposal_ID")
+		
+		# Proposal_ID		Sponsor	Allocated Amt	Total Cost	Funded?	Title	Begin Date	End Date	Submit Date	Principal Investigators
+		#values = {"Role": "PI", "Funded?": "No"}
+		df_old.fillna("",inplace=True)
 
 		# keep only truly new proposal IDs
 		new_rows = df_new.loc[~df_new.index.isin(df_old.index)]
-		print(f"adding {len(new_rows)} rows")
+		print(f" adding {len(new_rows)} rows")
 		# insert new rows by index
 		df_old = df_old.reindex(df_old.index.union(new_rows.index))
 		df_old.update(new_rows)
@@ -64,5 +75,5 @@ for FacultyName in os.listdir(faculty_folder):
 	if os.path.isdir(pandg_folder):
 		name = abbreviate_name(FacultyName,first_initial_only=True).lower();
 		entries=df[df["Faculty"]==name]
-		print(f"{name}: {str(len(entries))}")
+		print(f"{name}: {str(len(entries))}", end ="")
 		merge_proposals(entries,faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name)
