@@ -16,13 +16,15 @@ new_column_names = {
 'P_STATUS': 'Role',
 'Name': 'Faculty', 
 'Name.1': 'Sponsor',
-'PROP_STATUS': 'Funded?',
+'Status': 'Funded?',
 'Long Descr': 'Title'
 }
 
 def merge_proposals(df_new, destination):
 	if exists(destination):
-		df_old = pd.read_excel(destination,sheet_name="Data",dtype={'Proposal_ID': str})
+		excelFile = pd.read_excel(destination, sheet_name=None,dtype={'Proposal_ID': str})
+		df_old = excelFile.get("Data", pd.DataFrame())
+		notes = excelFile.get("Notes", pd.DataFrame())
 		
 		# generate duplicate counters per value
 		dupe_count = df_old.groupby("Proposal_ID").cumcount()
@@ -46,13 +48,15 @@ def merge_proposals(df_new, destination):
 		df_old = df_old.reindex(df_old.index.union(new_rows.index))
 		df_old.update(new_rows)
 
-		with pd.ExcelWriter(destination) as writer:
-			df_old.to_excel(writer, sheet_name="Data")
+		with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
+			notes.to_excel(writer, sheet_name="Notes", index=False)
+			df_old.to_excel(writer, sheet_name="Data", index=True)
 
 	else:
-		with pd.ExcelWriter(destination) as writer:
-			df_new.to_excel(writer, sheet_name="Data")
-
+		with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
+			df_new.to_excel(writer, sheet_name="Data",index=True)
+			notes = pd.DataFrame()
+			notes.to_excel(writer, sheet_name="Notes", index=False)
 
 # Read the desired source file, which is the updated Proposal and Grants file with new entries
 source = sys.argv[1]
