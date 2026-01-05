@@ -2,7 +2,7 @@
 
 for file in [A-Z]?*; do
 	echo "$file" 
-	cd "$file/CV"
-	make_cv
-	cd ../..
+	cd "$file/make_cv/CV"
+	make_far "$@"
+	cd ../../..
 done
