@@ -17,10 +17,7 @@ folder = "Proposals & Grants"
 # You may have to install openpyxl: pip3 install openpyxl
 
 # Source is faculty folder
-if platform.system() == 'Windows':
-	file_source = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
-else:
-	file_source = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
+file_source = sys.argv[1]
 	
 tempcsv = "temp.csv"
 compilation = open(tempcsv, 'w+')
@@ -31,7 +28,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 	if FacultyName[0].isalnum(): # gets rid of hidden files generated, allows for only faculty names left
 		print("SRS: " +FacultyName)
 		try:
-			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+folder +os.sep +file, engine='openpyxl',header=1)
+			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+folder +os.sep +file, engine='openpyxl',header=1,sheet_name="Data")
 			sheet["FacultyName"] = FacultyName
 			sheet.to_csv(open(tempcsv, 'a+'),index=False,header=False)
 		except (IndexError,ValueError,OSError) as e:

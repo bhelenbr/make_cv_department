@@ -43,12 +43,12 @@ for FacultyName in os.listdir("."):
 	if "," not in FacultyName:
 		continue
 
-	faculty_key = abbreviate_name(FacultyName,first_initial_only=True)
+	faculty_key = abbreviate_name(FacultyName,first_initial_only=True).lower()
 
 	entries = committees[committees["Faculty"] == faculty_key]
 	if entries.empty:
 		continue
-	print(f"updating {faculty_key}")
+	print(f"updating {faculty_key} with {len(entries)} entries")
 	toAppend = entries.drop(columns=["Faculty", "Department"], errors="ignore")
 	
 	service_dir = Path(FacultyName) / "Service"

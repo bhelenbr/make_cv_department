@@ -14,10 +14,7 @@ import openpyxl
 # You may have to install openpyxl: pip3 install openpyxl
 
 # Source is faculty folder
-if platform.system() == 'Windows':
-	file_source = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
-else:
-	file_source = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
+file_source = sys.argv[1]
 	
 file = "service data.xlsx"
 

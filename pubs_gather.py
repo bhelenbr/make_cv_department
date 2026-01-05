@@ -29,13 +29,10 @@ def extract_by_keyword(database,keyword):
 	return(bib_database)
 
 # Source is faculty folder
-if platform.system() == 'Windows':
-	file_source = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
-else:
-	file_source = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
+file_source = sys.argv[1]
 
 folder = "Scholarship"
-keyword = sys.argv[1]
+keyword = sys.argv[2]
 
 writer = BibTexWriter()
 writer.order_entries_by = None

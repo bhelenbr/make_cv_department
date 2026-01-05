@@ -8,79 +8,107 @@ YEAR=$(date "+%Y")
 let YEAR=$YEAR-1
 
 echo "Undergraduate Research"
+if [ ! -d "Undergraduate Research" ]; then
+	mkdir "Undergraduate Research"
+	mkdir "Undergraduate Research/Historical"
+fi
 cd "Undergraduate Research"
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "undergraduate research data.xlsx" Historical/${YEAR}
-../Scripts/UR_gather.py
+UR_gather.py "$1"
 cd ..
 
 echo "Service"
+if [ ! -d "Service" ]; then
+	mkdir "Service"
+	mkdir "Service/Historical"
+fi
 cd Service
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "service data.xlsx" Historical/${YEAR}
-../Scripts/service_gather.py
+service_gather.py "$1"
 cd ..
 
 echo "Awards"
+if [ ! -d "Awards" ]; then
+	mkdir "Awards"
+	mkdir "Awards/Historical"
+fi
 cd Awards
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "personal awards data.xlsx" Historical/${YEAR}
 mv -n "student awards data.xlsx" Historical/${YEAR}
-../Scripts/personal_awards_gather.py
-../Scripts/student_awards_gather.py
+personal_awards_gather.py "$1"
+student_awards_gather.py "$1"
 cd ..
 
 echo "Proposals & Grants"
+if [ ! -d "Proposals & Grants" ]; then
+	mkdir "Proposals & Grants"
+	mkdir "Proposals & Grants/Historical"
+fi
 cd "Proposals & Grants"
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "proposals & grants.xlsx" Historical/${YEAR}
-../Scripts/srs_gather.py
+srs_gather.py "$1"
 cd ..
 
 echo "Scholarship"
+if [ ! -d Scholarship ]; then
+  mkdir Scholarship
+  mkdir Scholarship/Historical
+fi
 cd Scholarship
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n *.xlsx Historical/${YEAR}
 echo "Journal"
-../Scripts/pubs_gather.py journal
+pubs_gather.py "$1" journal 
 echo "Invited"
-../Scripts/pubs_gather.py invited
+pubs_gather.py "$1" invited
 echo "Patent"
-../Scripts/pubs_gather.py patent
+pubs_gather.py "$1" patent
 echo "Refereed"
-../Scripts/pubs_gather.py refereed
+pubs_gather.py "$1" refereed
 echo "Conference"
-../Scripts/pubs_gather.py conference
+pubs_gather.py "$1" conference
 echo "Book"
-../Scripts/pubs_gather.py book
+pubs_gather.py "$1" book
 cd ..
 
 echo "Reviewing"
+if [ ! -d Reviewing ]; then
+  mkdir Reviewing
+  mkdir Reviewing/Historical
+fi
 cd Reviewing
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "reviews data.xlsx" Historical/${YEAR}
-../Scripts/review_gather.py
+review_gather.py "$1"
 cd ..
 
 echo "Thesis"
+if [ ! -d Thesis ]; then
+  mkdir Thesis
+  mkdir Thesis/Historical
+fi
 cd Thesis
 if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "thesis data.xlsx" Historical/${YEAR}
 mv -n "current student data.xlsx" Historical/${YEAR}
-../Scripts/thesis_gather.py
-../Scripts/current_grads_gather.py
+thesis_gather.py "$1"
+current_grads_gather.py "$1"
 cd ..
