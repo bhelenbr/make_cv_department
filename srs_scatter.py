@@ -85,5 +85,5 @@ for FacultyName in os.listdir(faculty_folder):
 			employee_id = int(f.read().strip())
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["ID"])
-		print(f"{FacultyName}: {str(len(entries))}", end ="")
+		print(f"Adding proposals & grants to {FacultyName}: {str(len(entries))}", end ="")
 		merge_proposals(entries,faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name)
