@@ -12,6 +12,7 @@ import argparse
 parser = argparse.ArgumentParser(description='This script creates the annual report and assoicated data')
 parser.add_argument('-y','--years', type=int, help='The number of years of data to use (default is 3)',default='3')
 parser.add_argument('-a','--anonymous', action=argparse.BooleanOptionalAction, help='Anonymize salary & teaching/advising evaluations',default=False)
+parser.add_argument('')
 
 args = parser.parse_args()
 years = args.years
@@ -20,6 +21,8 @@ Anonymous_Flag = args.anonymous
 # Run this script from the Department Data folder to create annual report
 
 # Source is faculty folder
+faculty_source = sys.argv[1]
+gathered_source = sys.argv[2]
 if platform.system() == 'Windows':
 	faculty_source = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
 	gathered_source = r"S:\departments\Mechanical & Aeronautical Engineering\Confidential Information\Department Data"
