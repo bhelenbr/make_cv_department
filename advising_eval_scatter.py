@@ -33,13 +33,12 @@ for FacultyName in os.listdir("."):
 			filename = FacultyName +os.sep +"Service" +os.sep +"advising evaluation data.xlsx"
 			if Path(filename).is_file():
 				excelFile = pd.read_excel(filename,dtype={'ID': str})
-				startsize = excelFile.shape[0]
 				result = pd.concat([excelFile, entries],ignore_index=True)
 				result = result.drop_duplicates()
 				result.sort_values(by=['Term','Number'],ascending=[True,True],inplace=True)					
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
-				print(f'Appended {result.shape[0] -startsize}')
+				print(f'Appended {result.shape[0] -excelFile.shape[0]}')
 			else:
 				with pd.ExcelWriter(filename) as writer:
 					entries.to_excel(writer,index=False)

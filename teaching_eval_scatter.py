@@ -11,31 +11,26 @@ import sys
 
 faculty_dir = sys.argv[2]
 source_file = sys.argv[1]
+emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
 
 df = pd.read_excel(source_file,skiprows=1)
-new_columns = [ "STRM","term","school","course","course_num","course_section","course_title","INSTR_NA","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
+new_columns = [ "STRM","term","school","course","course_num","course_section","course_title","INSTR_NA","ID","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
 df.columns = new_columns
 df["Weighted Average"] = df["count_evals"]*df["Calculated Mean"]
 df["combined_course_num"] = df["combined_course_num"].fillna(df["course_num"])
-df.fillna(value={"INSTR_NA":""},inplace=True)
-sorted = df.sort_values(by="INSTR_NA",ignore_index=True)
-nrows = sorted.shape[0]
 
 os.chdir(faculty_dir) # where files need to go
 
-count = 1
-while count < nrows:
-	advisor = sorted.loc[count,'INSTR_NA']
-	entries=sorted[sorted["INSTR_NA"]==advisor]
-	entries.reset_index(inplace=True)
-	for FacultyName in os.listdir("."):
-		if FacultyName[0].isalnum():
-			lastname = FacultyName.lower()[0:FacultyName.find(",")]
-			firstinitial = FacultyName.lower()[FacultyName.find(",")+2]
-			if advisor.lower().find(lastname+","+firstinitial) != -1 :
-				print(lastname+","+firstinitial)
-				#print(entries.head())
-				with pd.ExcelWriter(FacultyName + "/Teaching/" + "/teaching evaluation data.xlsx") as writer:
+for FacultyName in os.listdir("."):
+	if FacultyName.find(",") > -1:
+		print(f'Updating teaching evaluations for {FacultyName} ',end='')
+		personal_folder = FacultyName +os.sep +emplid_file
+		with open(personal_folder, "r") as f:
+			employee_id = int(f.read().strip())
+			
+		# Get entries for this faculty
+		entries=df.loc[df["ID"].astype(int) == employee_id]
+		if entries.shape[0] > 0:
+			with pd.ExcelWriter(FacultyName + "/Teaching/" + "/teaching evaluation data.xlsx") as writer:
 					entries.to_excel(writer,sheet_name='Data',index=False)
-	count += entries.shape[0]
-
+		print(f'added {entries.shape[0]} entries')

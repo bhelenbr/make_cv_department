@@ -40,47 +40,42 @@ committees.fillna(value={"Comments": ""}, inplace=True)
 os.chdir(facultyFolder)
 
 for FacultyName in os.listdir("."):
-	if "," not in FacultyName:
-		continue
+	if FacultyName.find(",") > -1:
+		print(f"Adding service entries to {FacultyName}: ",end="")
 
-	faculty_key = abbreviate_name(FacultyName,first_initial_only=True).lower()
-
-	entries = committees[committees["Faculty"] == faculty_key]
-	if entries.empty:
-		continue
-	print(f"updating {faculty_key} with {len(entries)} entries")
-	toAppend = entries.drop(columns=["Faculty", "Department"], errors="ignore")
-	
-	service_dir = Path(FacultyName) / "Service"
-	service_dir.mkdir(parents=True, exist_ok=True)
-	
-	filename = service_dir / "service data.xlsx"
-	backupfile = service_dir / "service_backup.xlsx"
-	
-	# ---------------- Read existing file ----------------
-	if filename.exists():
-		shutil.copyfile(filename, backupfile)
-		excelFile = pd.read_excel(filename, sheet_name=None)
-		existing_data = excelFile.get("Data", pd.DataFrame())
-		existing_data.fillna(value={"Comments": ""}, inplace=True)
-		notes = excelFile.get("Notes", pd.DataFrame())
-	else:
-		existing_data = pd.DataFrame()
-		notes = pd.DataFrame()
-	
-	# ---------------- Merge ----------------
-	result = (
-		pd.concat([existing_data, toAppend], ignore_index=True)
-		.drop_duplicates()
-		.sort_values(
-			by=["Calendar Year", "Term", "Description"],
-			ascending=[True, False, True]
-		)
-	)
-	
-	# ---------------- Write ----------------
-	with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
-		notes.to_excel(writer, sheet_name="Notes", index=False)
-		result.to_excel(writer, sheet_name="Data", index=False)
+		faculty_key = abbreviate_name(FacultyName,first_initial_only=True).lower()
+		entries = committees[committees["Faculty"] == faculty_key]
+		if entries.shape[0] > 0:
+			toAppend = entries.drop(columns=["Faculty", "Department"], errors="ignore")
+			
+			service_dir = Path(FacultyName) / "Service"			
+			filename = service_dir / "service data.xlsx"
+			backupfile = service_dir / "service_backup.xlsx"
+			
+			# ---------------- Read existing file ----------------
+			shutil.copyfile(filename, backupfile)
+			excelFile = pd.read_excel(filename, sheet_name=None)
+			existing_data = excelFile.get("Data", pd.DataFrame())
+			existing_data.fillna(value={"Comments": ""}, inplace=True)
+			notes = excelFile.get("Notes", pd.DataFrame())
+			
+			# ---------------- Merge ----------------
+			result = (
+				pd.concat([existing_data, toAppend], ignore_index=True)
+				.drop_duplicates()
+				.sort_values(
+					by=["Calendar Year", "Term", "Description"],
+					ascending=[True, False, True]
+				)
+			)
+			
+			
+			# ---------------- Write ----------------
+			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
+				notes.to_excel(writer, sheet_name="Notes", index=False)
+				result.to_excel(writer, sheet_name="Data", index=False)
+			print(f'Appended {result.shape[0] -existing_data.shape[0]}')
+		else:
+			print('No entries')
 
 
