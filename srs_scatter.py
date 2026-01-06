@@ -20,6 +20,8 @@ new_column_names = {
 'Long Descr': 'Title'
 }
 
+emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+
 def merge_proposals(df_new, destination):
 	if exists(destination):
 		excelFile = pd.read_excel(destination, sheet_name=None,dtype={'Proposal_ID': str})
@@ -62,7 +64,7 @@ def merge_proposals(df_new, destination):
 source = sys.argv[1]
 df = pd.read_excel(source,index_col='Proposal',skiprows=1)
 df.rename(columns=new_column_names, inplace=True)
-df.drop(['Project','ID','PCT','RO Number'], axis=1,inplace=True)
+df.drop(['Project','PCT','RO Number'], axis=1,inplace=True)
 df["Faculty"] = (
 	df["Faculty"]
 	.astype(str)
@@ -77,7 +79,11 @@ file_name = "proposals & grants.xlsx"
 for FacultyName in os.listdir(faculty_folder):
 	pandg_folder = faculty_folder+os.sep +FacultyName +os.sep +subfolder
 	if os.path.isdir(pandg_folder):
-		name = abbreviate_name(FacultyName,first_initial_only=True).lower();
-		entries=df[df["Faculty"]==name]
-		print(f"{name}: {str(len(entries))}", end ="")
+		# Get employee id
+		personal_folder = faculty_folder+os.sep +FacultyName +os.sep +emplid_file
+		with open(personal_folder, "r") as f:
+			employee_id = int(f.read().strip())
+		entries=df.loc[df["ID"].astype(int) == employee_id]
+		entries = entries.drop(columns = ["ID"])
+		print(f"{FacultyName}: {str(len(entries))}", end ="")
 		merge_proposals(entries,faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name)
