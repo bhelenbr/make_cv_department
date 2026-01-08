@@ -77,8 +77,7 @@ subfolder = "Proposals & Grants"
 file_name = "proposals & grants.xlsx"
 
 for FacultyName in os.listdir(faculty_folder):
-	pandg_folder = faculty_folder+os.sep +FacultyName +os.sep +subfolder
-	if os.path.isdir(pandg_folder):
+	if FacultyName.find(",") > -1:
 		# Get employee id
 		personal_folder = faculty_folder+os.sep +FacultyName +os.sep +emplid_file
 		with open(personal_folder, "r") as f:

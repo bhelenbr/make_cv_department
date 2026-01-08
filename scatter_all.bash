@@ -4,7 +4,8 @@ employee_id_scatter.py "$1"/Faculty\ List* "$2"
 advisee_counts_scatter.py "$1"/CU_ACAD_DEPT_ADVISOR_CT_ALLDEP_* "$2"
 for file in "$1"/CU_ADVIS_EVAL_DATA_ALL*; do
 	advising_eval_scatter.py "$file" "$2"; done
-srs_scatter.py "$1"/CU_GM_ALL_PROPS_ALL_* "$2"
+srs_proposals_scatter.py "$1"/CU_GM_ALL_PROPS_ALL_* "$2"
+srs_grants_scatter.py "$1"/CU_INTERFOLIO_AWARDS_* "$2"
 current_grads_scatter2.py "$1"/CU_ACAD_STDNT_ADVISOR_LISTING* "$2"
 teaching_eval_scatter.py "$1"/CU_CRSE_EVAL_DATA_ALL_* "$2"
 for file in "$1"/CU_BH_PROJ_RES_CLASS_FULL*; do
