@@ -81,15 +81,12 @@ df = pd.read_excel(source,skiprows=1,dtype={'Faculty ID': str})
 
 # Try to make the grant data look like the proposal data
 df.rename(columns=new_column_names, inplace=True)
-
-idx = df.groupby("Proposal_ID")["Budget Period"].idxmax()
-df = df.loc[idx]
 df["Faculty"] = (
 	(df["First Name"].astype(str) +" " +df["Last Name"].astype(str))
 	.apply(lambda x: abbreviate_name(x,first_initial_only=True).lower())
 )
 df["Total Cost"] = df["Allocated Amt"]/df["PCT"].astype(float)*100.
-df.drop(["First Name","Last Name","Budget Period","Award Status","Total # of Funding Periods","Award ID / Contract ID"], axis=1,inplace=True)
+df.drop(["First Name","Last Name","Award Status","Total # of Funding Periods","Award ID / Contract ID"], axis=1,inplace=True)
 
 faculty_folder = sys.argv[2]
 subfolder = "Proposals & Grants"
@@ -103,6 +100,9 @@ for FacultyName in os.listdir(faculty_folder):
 			employee_id = int(f.read().strip())
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["ID"])
+		idx = entries.groupby("Proposal_ID")["Budget Period"].idxmax()
+		entries = entries.loc[idx]
+		entries = entries.drop(columns = ["Budget Period"])
 		entries = entries.set_index("Proposal_ID",drop=True)
 		
 		print(f"Adding proposals & grants to {FacultyName}: ", end ="")
