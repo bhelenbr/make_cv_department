@@ -16,7 +16,7 @@ EXCEL_FILE = sys.argv[1]
 file_destination = sys.argv[2]
 
 FAR_DRAFT_PATH = "make_cv" +os.sep +"FAR_docx" +os.sep +"far.docx"
-NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"nsfcoa.xlsx"
+NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"collaborators.xlsx"
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -72,7 +72,7 @@ We will continue to streamline and automate FAR information and processes where 
 <p>Best regards,<br>
 FAR Team</p>
 
-<p style="font-style: italic;">P.S. For those of you who do NSF proposals, we have also included a file “nsfcoa.xlsx” which uses the grant, student, and publication information to create a collaborator list for NSF submissions.</p>
+<p style="font-style: italic;">P.S. For those of you who do NSF proposals, we have also included a file “collaborators.xlsx” which uses the grant, student, and publication information to create a collaborator list for NSF submissions.</p>
 </body>
 </html>
 """
@@ -81,17 +81,9 @@ FAR Team</p>
 # Load spreadsheet 
 # --------------------
 
-df = pd.read_excel(EXCEL_FILE,skiprows=1,dtype={'ID': str})
+df = pd.read_excel(EXCEL_FILE)
 
-# -----------------------------
-# Attachments
-# -----------------------------
 
-attachments = [Path(FAR_DRAFT_PATH), Path(NSF_COA_PATH)]
-
-for att in attachments:
-    if not att.exists():
-        print(f"WARNING: Missing attachment → {att}")
 
 # -----------------------------
 # Connect to SMTP
@@ -134,9 +126,22 @@ for FacultyName in os.listdir("."):
         msg["Cc"] = supervisor
         msg["Subject"] = SUBJECT
 
+        print(recipient)
+        print(supervisor)
+        
         html_body = HTML_BODY_TEMPLATE.format(name=greeting_name)
         msg.set_content(html_body, subtype="html")
 
+        # -----------------------------
+        # Attachments
+        # -----------------------------
+        
+        attachments = [Path(FacultyName +os.sep +FAR_DRAFT_PATH),  Path(FacultyName +os.sep +NSF_COA_PATH)]
+        
+        for att in attachments:
+            if not att.exists():
+                print(f"WARNING: Missing attachment → {att}")
+                
         # Attach files
         for att in attachments:
             if att.exists():
