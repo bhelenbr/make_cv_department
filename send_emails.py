@@ -1,72 +1,171 @@
+#! /usr/bin/env python3
 
+import os,sys,platform,shutil
 import pandas as pd
 import smtplib
 from email.message import EmailMessage
 from pathlib import Path
+import time
+import traceback
 
 # -----------------------------
 # Configuration
 # -----------------------------
-EXCEL_FILE = '/Users/akshaythugudam/Documents/GitHub/University Data/email_test.xlsx'
-ATTACHMENT_PATH = '/Users/akshaythugudam/Documents/GitHub/Departments/Arts Culture Technology Dept/Ball, Jennifer/make_cv/FAR_docx/far.docx'
+
+EXCEL_FILE = sys.argv[1]
+file_destination = sys.argv[2]
+
+FAR_DRAFT_PATH = "make_cv" +os.sep +"FAR_docx" +os.sep +"far.docx"
+NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"nsfcoa.xlsx"
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-# Account you authenticate with
 AUTH_EMAIL = "thuguda@clarkson.edu"
-AUTH_PASSWORD = "kichjbhkyhukldci"
+AUTH_PASSWORD = "kichjbhkyhukldci"  # Must be valid App Password
 
-# Delegated "Send As" address
 DELEGATED_EMAIL = "far@clarkson.edu"
-DELEGATED_NAME = "TEAM FAR"
+DELEGATED_NAME = "FAR Team"
 
-SUBJECT = "Automated Message"
-BODY_TEMPLATE = """\
-Hello {name},
+SUBJECT = "2025 Faculty Activity Report (FAR) Draft – Review & Submission Required"
 
-This message is sent from a delegated departmental account.
+# HTML body with bold text
+HTML_BODY_TEMPLATE = """\
+<html>
+<body style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.5;">
+<p>Dear Prof. {name},</p>
 
-Best regards,
-FAR
+<p>Attached please find a working draft of your <strong>2025 annual Faculty Activity Report (FAR)</strong>. This draft includes pre-populated information where available to support review and completion.</p>
+
+<p>Please begin by reviewing the instructions provided at the beginning of the FAR, as they outline how the document is structured and how information should be reviewed and updated.</p>
+
+<p><strong>What to Do</strong><br>
+Please review the attached FAR carefully and:</p>
+
+<ul>
+  <li>Correct or update any pre-populated information</li>
+  <li>Add any missing information as appropriate</li>
+</ul>
+
+<p>Please retain all section headers, even if a section does not apply to you. There is no need to add “N/A” under sections that are not relevant.<br>
+<strong>Faculty are responsible for reviewing and verifying the accuracy and completeness</strong> of any information they edit or add to the FAR prior to submission.</p>
+
+<p><strong>Submission Deadline</strong><br>
+Please submit your completed, revised FAR by <strong>February 2</strong> to:</p>
+
+<ul>
+  <li>Your department chair or equivalent supervisor</li>
+  <li>Your department administrator or designee</li>
+  <li><strong>far@clarkson.edu</strong></li>
+</ul>
+
+<p><strong>What Happens Next</strong><br>
+Department chairs or supervisors will conduct annual reviews and draft review letters as usual by <strong>February 27</strong>.</p>
+
+<p><strong>Looking Ahead</strong><br>
+We will continue to streamline and automate FAR information and processes where possible to support efficiency, accuracy, and consistent reporting across departments. Submitting revised FARs to far@clarkson.edu helps inform ongoing improvements to data collection and reporting.</p>
+
+<p>If you have questions related to your FAR draft, please reach out to your department or email far@clarkson.edu.</p>
+
+<p>Thank you for your time and attention to the FAR reporting and review process.</p>
+
+<p>Best regards,<br>
+FAR Team</p>
+
+<p style="font-style: italic;">P.S. For those of you who do NSF proposals, we have also included a file “nsfcoa.xlsx” which uses the grant, student, and publication information to create a collaborator list for NSF submissions.</p>
+</body>
+</html>
 """
 
-# -----------------------------
-# Load spreadsheet
-# -----------------------------
-df = pd.read_excel(EXCEL_FILE)
+# -------------------
+# Load spreadsheet 
+# --------------------
+
+df = pd.read_excel(EXCEL_FILE,skiprows=1,dtype={'ID': str})
 
 # -----------------------------
-# Connect to Gmail
+# Attachments
 # -----------------------------
-server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-server.starttls()
-server.login(AUTH_EMAIL, AUTH_PASSWORD)
 
-attachment_path = Path(ATTACHMENT_PATH)
+attachments = [Path(FAR_DRAFT_PATH), Path(NSF_COA_PATH)]
+
+for att in attachments:
+    if not att.exists():
+        print(f"WARNING: Missing attachment → {att}")
 
 # -----------------------------
-# Send emails
+# Connect to SMTP
 # -----------------------------
-for _, row in df.iterrows():
-    recipient = row["Email"]
-    name = row.get("Name", "Colleague")
+try:
+    server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+    server.starttls()
+    server.login(AUTH_EMAIL, AUTH_PASSWORD)
+    print("SMTP login successful\n")
+except Exception as e:
+    print("Login failed. Please check App Password and 2FA.")
+    print(e)
+    exit(1)
 
-    msg = EmailMessage()
-    msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
-    msg["To"] = recipient
-    msg["Subject"] = SUBJECT
-    msg.set_content(BODY_TEMPLATE.format(name=name))
+# -----------------------------
+# Send emails with count
+# -----------------------------
+sent = 0
+skipped = 0
 
-    with open(attachment_path, "rb") as f:
-        msg.add_attachment(
-            f.read(),
-            maintype="application",
-            subtype="octet-stream",
-            filename=attachment_path.name
-        )
+df["FacultyName"] = df["LAST_NAME"].astype(str) +', ' +df["FIRST_NAME"].astype(str)
 
-    server.send_message(msg)
-    print(f"Sent delegated email to {recipient}")
+os.chdir(file_destination)
 
+for FacultyName in os.listdir("."):
+    if FacultyName.find(",") > -1:
+        print(f'Sending e-mail for {FacultyName}: ', end="")
+        entries = df[df['FacultyName'] == FacultyName]
+        if not entries.shape[0] == 1:
+            print('Uh-oh' +FacultyName)
+            skipped += 1
+            continue
+        recipient = entries["JJs Email list"].iloc[0]
+        supervisor = entries["Supervisor Email"].iloc[0]
+        greeting_name = entries["LAST_NAME"].iloc[0]
+
+        msg = EmailMessage()
+        msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
+        msg["To"] = recipient
+        msg["Cc"] = supervisor
+        msg["Subject"] = SUBJECT
+
+        html_body = HTML_BODY_TEMPLATE.format(name=greeting_name)
+        msg.set_content(html_body, subtype="html")
+
+        # Attach files
+        for att in attachments:
+            if att.exists():
+                ext = att.suffix.lower()
+                if ext == '.pdf':
+                    main, sub = "application", "pdf"
+                elif ext in ['.docx', '.doc']:
+                    main, sub = "application", "vnd.openxmlformats-officedocument.wordprocessingml.document"
+                elif ext == '.xlsx':
+                    main, sub = "application", "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                else:
+                    main, sub = "application", "octet-stream"
+
+                with open(att, "rb") as f:
+                    msg.add_attachment(f.read(), maintype=main, subtype=sub, filename=att.name)
+
+        try:
+            server.send_message(msg)
+            sent += 1
+            time.sleep(2)  # Rate limit protection
+        except Exception as e:
+            print('Uh-oh' +FacultyName)
+            skipped += 1
+
+# -----------------------------
+# Summary
+# -----------------------------
 server.quit()
+
+print(f"\n=== Summary ===")
+print(f"Successfully sent: {sent}")
+print(f"Skipped/failed: {skipped}")
