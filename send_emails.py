@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 
 import pandas as pd
 import smtplib
@@ -8,23 +7,28 @@ from pathlib import Path
 # -----------------------------
 # Configuration
 # -----------------------------
-EXCEL_FILE = "emails.xlsx"
-ATTACHMENT_PATH = "attachment.pdf"
+EXCEL_FILE = '/Users/akshaythugudam/Documents/GitHub/University Data/email_test.xlsx'
+ATTACHMENT_PATH = '/Users/akshaythugudam/Documents/GitHub/Departments/Arts Culture Technology Dept/Ball, Jennifer/make_cv/FAR_docx/far.docx'
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-SENDER_EMAIL = "your_email@gmail.com"
-SENDER_PASSWORD = "your_app_password"  # Gmail app password
+# Account you authenticate with
+AUTH_EMAIL = "thuguda@clarkson.edu"
+AUTH_PASSWORD = "kichjbhkyhukldci"
+
+# Delegated "Send As" address
+DELEGATED_EMAIL = "far@clarkson.edu"
+DELEGATED_NAME = "TEAM FAR"
 
 SUBJECT = "Automated Message"
 BODY_TEMPLATE = """\
 Hello {name},
 
-This is an automated email sent using Python.
+This message is sent from a delegated departmental account.
 
 Best regards,
-Brian
+FAR
 """
 
 # -----------------------------
@@ -33,28 +37,27 @@ Brian
 df = pd.read_excel(EXCEL_FILE)
 
 # -----------------------------
-# Connect to SMTP server
+# Connect to Gmail
 # -----------------------------
 server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
 server.starttls()
-server.login(SENDER_EMAIL, SENDER_PASSWORD)
+server.login(AUTH_EMAIL, AUTH_PASSWORD)
+
+attachment_path = Path(ATTACHMENT_PATH)
 
 # -----------------------------
 # Send emails
 # -----------------------------
-attachment_path = Path(ATTACHMENT_PATH)
-
 for _, row in df.iterrows():
     recipient = row["Email"]
     name = row.get("Name", "Colleague")
 
     msg = EmailMessage()
-    msg["From"] = SENDER_EMAIL
+    msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
     msg["To"] = recipient
     msg["Subject"] = SUBJECT
     msg.set_content(BODY_TEMPLATE.format(name=name))
 
-    # Attach file
     with open(attachment_path, "rb") as f:
         msg.add_attachment(
             f.read(),
@@ -64,9 +67,6 @@ for _, row in df.iterrows():
         )
 
     server.send_message(msg)
-    print(f"Sent email to {recipient}")
+    print(f"Sent delegated email to {recipient}")
 
-# -----------------------------
-# Cleanup
-# -----------------------------
 server.quit()
