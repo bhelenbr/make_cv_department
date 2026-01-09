@@ -2,7 +2,7 @@
 
 for file in [A-Z]?*; do
 	echo "$file" 
-	cd "$file/CV"
+	cd "$file/make_cv/Collaborators"
 	make_nsfcoa
-	cd ../..
+	cd ../../..
 done
