@@ -7,6 +7,7 @@ from email.message import EmailMessage
 from pathlib import Path
 import time
 import traceback
+import shutil
 
 # -----------------------------
 # Configuration
@@ -15,7 +16,7 @@ import traceback
 EXCEL_FILE = sys.argv[1]
 file_destination = sys.argv[2]
 
-FAR_DRAFT_PATH = "make_cv" +os.sep +"FAR_docx" +os.sep +"far.docx"
+FAR_DRAFT_PATH = "make_cv" +os.sep +"FAR_docx"
 NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"collaborators.xlsx"
 
 SMTP_SERVER = "smtp.gmail.com"
@@ -70,7 +71,13 @@ We will continue to streamline and automate FAR information and processes where 
 <p>Thank you for your time and attention to the FAR reporting and review process.</p>
 
 <p>Best regards,<br>
-FAR Team</p>
+FAR Team<br>
+Brian Helenbrook<br>
+Sidrah Yaqoob<br>
+Akshay Kumar Thugudam<br>
+Mohamed Fehmi Krifa<br>
+</p>
+
 
 <p style="font-style: italic;">P.S. For those of you who do NSF proposals, we have also included a file “collaborators.xlsx” which uses the grant, student, and publication information to create a collaborator list for NSF submissions.</p>
 </body>
@@ -119,6 +126,7 @@ for FacultyName in os.listdir("."):
         recipient = entries["JJs Email list"].iloc[0]
         supervisor = entries["Supervisor Email"].iloc[0]
         greeting_name = entries["LAST_NAME"].iloc[0]
+        shutil.copyfile(Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +"far.docx"), Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +FacultyName +" FAR.docx"))
 
         msg = EmailMessage()
         msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
@@ -136,7 +144,7 @@ for FacultyName in os.listdir("."):
         # Attachments
         # -----------------------------
         
-        attachments = [Path(FacultyName +os.sep +FAR_DRAFT_PATH),  Path(FacultyName +os.sep +NSF_COA_PATH)]
+        attachments = [Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +FacultyName +" FAR.docx"),  Path(FacultyName +os.sep +NSF_COA_PATH)]
         
         for att in attachments:
             if not att.exists():
