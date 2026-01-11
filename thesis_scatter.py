@@ -3,6 +3,9 @@
 import os,sys,platform,shutil
 import pandas as pd
 import argparse
+from pathlib import Path
+
+from copy_with_timestamp import copy_with_timestamp
 
 parser = argparse.ArgumentParser(description='This script scatters the thesis data to the faculty thesis files')
 parser.add_argument('file', help='the name of the file to scatter')
@@ -12,6 +15,7 @@ args = parser.parse_args()
 
 facultyFolder = args.destination
 source = args.file
+backup_dir = "make_cv/Backups"
 
 theses = pd.read_excel(source,sheet_name='Data')
 theses = theses[theses["Year"] == args.year]
@@ -32,14 +36,14 @@ for FacultyName in os.listdir("."):
 			print(toAppend)
 			
 			filename = FacultyName +os.sep +destination
+			if Path(filename).is_file():
+				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 			excelFile = pd.read_excel(filename,sheet_name='Data')
 			
 			result = pd.concat([excelFile, toAppend],ignore_index=True)
 			result = result.drop_duplicates()
 			result.sort_values(by=['Year','Degree','Student'],ascending=[True,True,True],inplace=True)
 			
-			backupfile = FacultyName +os.sep +"Scholarship" +os.sep +"thesis_backup.xlsx"
-			shutil.copyfile(filename,backupfile)
 			
 			with pd.ExcelWriter(filename) as writer:
 				result.to_excel(writer,sheet_name='Data',index=False)

@@ -11,7 +11,8 @@ for department in *; do
 	reset_files.sh "$2" "${department}"
 	scatter_all.bash "$3" "${department}"
 	cd "${department}"
-	make_fars_docx.bash -q -o 4 -g 4
+	#make_fars_docx.bash -q -o 4 -g 4
+	make_fars_docx.bash
 	make_nsfcoas.bash
 	cd ..
 done

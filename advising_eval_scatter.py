@@ -10,10 +10,12 @@ import platform
 import sys
 from pathlib import Path
 
+from copy_with_timestamp import copy_with_timestamp
+
 faculty_dir = sys.argv[2]
 source_file = sys.argv[1]
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
-
+backup_dir = "make_cv/Backups"
 
 df = pd.read_excel(source_file,skiprows=1,dtype={'ID': str})
 
@@ -32,6 +34,7 @@ for FacultyName in os.listdir("."):
 		if entries.shape[0] > 0:
 			filename = FacultyName +os.sep +"Service" +os.sep +"advising evaluation data.xlsx"
 			if Path(filename).is_file():
+				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 				excelFile = pd.read_excel(filename,dtype={'ID': str})
 				result = pd.concat([excelFile, entries],ignore_index=True)
 				result = result.drop_duplicates()

@@ -12,6 +12,8 @@ import shutil
 # -----------------------------
 # Configuration
 # -----------------------------
+# Argument one is the excel sheet of faculty & supervisors with e-mails
+# Argument two is the department directory
 
 EXCEL_FILE = sys.argv[1]
 file_destination = sys.argv[2]

@@ -12,6 +12,7 @@ from pathlib import Path
 import openpyxl
 
 from make_cv.stringprotect import abbreviate_name
+from copy_with_timestamp import copy_with_timestamp
 
 import sys
 import os
@@ -20,6 +21,7 @@ import pandas as pd
 
 faculty_dir = sys.argv[2]
 source_file = sys.argv[1]
+backup_dir = "make_cv/Backups"
 
 # --- Load data ---
 df = pd.read_excel(source_file)
@@ -68,6 +70,7 @@ for advisor, entries in table.groupby("Staff"):
 		Path(filename).parent.mkdir(parents=True, exist_ok=True)
 
 		if Path(filename).is_file():
+			copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 			existing = pd.read_excel(filename)
 			result = (
 				pd.concat([existing, entries], ignore_index=True)

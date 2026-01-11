@@ -10,7 +10,10 @@ import os
 import sys
 import platform
 from os.path import exists
+from pathlib import Path
+
 from make_cv.stringprotect import abbreviate_name
+from copy_with_timestamp import copy_with_timestamp
 
 # TITLES IN SOURCE DATA
 # "Faculty ID","First Name","Last Name","Contributor Type","Percent Effort","Grouped Award ID","Budget Period","Principal Investigators","Award Status","Title","Award Start Date","Award End Date","Funding Agency / Sponsor","Total # of Funding Periods","Award ID / Contract ID","Award Total Funding","Award Total Direct Funding"
@@ -33,6 +36,7 @@ new_column_names = {
 }
 
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+backup_dir = "make_cv/Backups"
 
 # This to allow people to modify the Sponsor or Title for better formatting etc...
 def merge_keep_old_columns(df_new, df_old, cols_from_old):
@@ -106,4 +110,7 @@ for FacultyName in os.listdir(faculty_folder):
 		entries = entries.set_index("Proposal_ID",drop=True)
 		
 		print(f"Adding proposals & grants to {FacultyName}: ", end ="")
-		merge_proposals(entries,faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name)
+		destination = faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name
+		if Path(destination).is_file():
+			copy_with_timestamp(destination,FacultyName+os.sep+backup_dir)
+		merge_proposals(entries,destination)

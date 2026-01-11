@@ -5,7 +5,6 @@ import pandas as pd
 import sys
 from make_cv.stringprotect import abbreviate_name
 
-
 # --------- CONFIGURATION ---------
 excel_file = sys.argv[1]
 faculty_folder = sys.argv[2]   # CHANGE THIS

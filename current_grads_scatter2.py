@@ -6,6 +6,9 @@ import numpy as np
 import datetime
 import xlsxwriter
 from datetime import date
+from pathlib import Path
+
+from copy_with_timestamp import copy_with_timestamp
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -17,6 +20,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 source = sys.argv[1]
 file_destination = sys.argv[2]
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+backup_dir = "make_cv/Backups"
 
 df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
 df = df[df["Career"]=="GRAD"]
@@ -40,7 +44,11 @@ for FacultyName in os.listdir("."):
 			entries["Start Date"] = pd.to_datetime(str(date.today()))
 			entries = entries.drop(columns=["Last","First Name","Acad Plan","Advisor ID"])
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
-			with pd.ExcelWriter(FacultyName +os.sep +destination,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
+			
+			filename = FacultyName +os.sep +destination
+			if Path(filename).is_file():
+				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
+			with pd.ExcelWriter(filename,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)
 			print(f'{entries.shape[0]} entries')
 		else:

@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+# First argument is the directory containing the University Data Files
+# Second argument is the department director
 employee_id_scatter.py "$1"/Faculty\ List* "$2"
 advisee_counts_scatter.py "$1"/CU_ACAD_DEPT_ADVISOR_CT_ALLDEP_* "$2"
 for file in "$1"/CU_ADVIS_EVAL_DATA_ALL*; do

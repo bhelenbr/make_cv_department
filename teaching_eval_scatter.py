@@ -8,10 +8,14 @@ import pandas as pd
 import os
 import platform
 import sys
+from pathlib import Path
+
+from copy_with_timestamp import copy_with_timestamp
 
 faculty_dir = sys.argv[2]
 source_file = sys.argv[1]
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+backup_dir = "make_cv/Backups"
 
 df = pd.read_excel(source_file,skiprows=1)
 new_columns = [ "STRM","term","school","course","course_num","course_section","course_title","INSTR_NA","ID","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
@@ -31,6 +35,9 @@ for FacultyName in os.listdir("."):
 		# Get entries for this faculty
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		if entries.shape[0] > 0:
+			destination = FacultyName + "/Teaching/" + "/teaching evaluation data.xlsx"
+			if Path(destination).is_file():
+				copy_with_timestamp(destination,FacultyName+os.sep+backup_dir)
 			with pd.ExcelWriter(FacultyName + "/Teaching/" + "/teaching evaluation data.xlsx") as writer:
 					entries.to_excel(writer,sheet_name='Data',index=False)
 		print(f'added {entries.shape[0]} entries')

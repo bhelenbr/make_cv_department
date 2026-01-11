@@ -8,11 +8,13 @@ from pathlib import Path
 from datetime import date
 
 from make_cv.stringprotect import abbreviate_name
+from copy_with_timestamp import copy_with_timestamp
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
 destination = "Proposals & Grants" +os.sep +"expenditures.xlsx"
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+backup_dir = "make_cv/Backups"
 
 df = pd.read_excel(source,skiprows=1,dtype={'EMPLID': str})
 df["Name"] = (
@@ -37,6 +39,7 @@ for FacultyName in os.listdir("."):
 		if entries.shape[0] > 0:
 			filename = FacultyName +os.sep +destination
 			if Path(filename).is_file():
+				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 				excelFile = pd.read_excel(filename)
 				result = pd.concat([excelFile, entries],ignore_index=True)
 				result = result.drop_duplicates()

@@ -7,6 +7,7 @@ import pandas as pd
 import argparse
 from pathlib import Path
 from make_cv.stringprotect import abbreviate_name
+from copy_with_timestamp import copy_with_timestamp
 
 # ---------------- CLI ----------------
 parser = argparse.ArgumentParser(
@@ -22,6 +23,7 @@ args = parser.parse_args()
 facultyFolder = args.destination
 source = args.file
 year = args.year
+backup_dir = "make_cv/Backups"
 
 # ---------------- Load data ----------------
 committees = pd.read_excel(source)
@@ -50,10 +52,9 @@ for FacultyName in os.listdir("."):
 			
 			service_dir = Path(FacultyName) / "Service"			
 			filename = service_dir / "service data.xlsx"
-			backupfile = service_dir / "service_backup.xlsx"
 			
 			# ---------------- Read existing file ----------------
-			shutil.copyfile(filename, backupfile)
+			copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 			excelFile = pd.read_excel(filename, sheet_name=None)
 			existing_data = excelFile.get("Data", pd.DataFrame())
 			existing_data.fillna(value={"Comments": ""}, inplace=True)

@@ -8,14 +8,17 @@ import os,sys,platform,shutil
 import pandas as pd
 import re
 import xlrd
+from pathlib import Path
 
 from make_cv.stringprotect import abbreviate_name
 from make_cv.stringprotect import abbreviate_name_list
+from copy_with_timestamp import copy_with_timestamp
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
 emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
 destination = "Service" +os.sep +"undergraduate research data.xlsx"
+backup_dir = "make_cv/Backups"
 
 df = pd.read_excel(source,skiprows=1,dtype={'Advisor ID': str})
 classnum = df["Class"].apply(lambda x: int(x[-3:]))
@@ -42,6 +45,8 @@ for FacultyName in os.listdir("."):
 		if entries.shape[0] > 0:
 			toAppend = entries[['Students','Title','Program Type','Term','Calendar Year']]			
 			filename = FacultyName +os.sep +destination
+			if Path(filename).is_file():
+				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
 			excelFile = pd.read_excel(filename,sheet_name='Data')
 			
 			result = pd.concat([excelFile, toAppend],ignore_index=True)
