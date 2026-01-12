@@ -13,15 +13,17 @@ from pathlib import Path
 from make_cv.stringprotect import abbreviate_name
 from make_cv.stringprotect import abbreviate_name_list
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
-emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
-destination = "Service" +os.sep +"undergraduate research data.xlsx"
-backup_dir = "make_cv/Backups"
+emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+destination = Path("Service") / "undergraduate research data.xlsx"
+backup_dir = Path("make_cv") / "Backups"
 
-df = pd.read_excel(source,skiprows=1,dtype={'Advisor ID': str})
-classnum = df["Class"].apply(lambda x: int(x[-3:]))
+df = pd.read_excel(source, skiprows=1, dtype={'Advisor ID': str})
+df.columns = [c.strip() for c in df.columns]
+classnum = df["Class"].apply(lambda x: int(str(x)[-3:]))
 df = df[classnum < 499]
 df = df[df['Title'] != 'Aircraft Design I']
 df = df[df['Title'] != 'Professional Experience']
@@ -31,30 +33,51 @@ df['Program Type'] = df['Program Type'].apply(lambda x: re.sub("Independent Stud
 df = df.rename(columns={"Student Name": "Students"})
 df['Students'] = df['Students'].apply(lambda x: abbreviate_name_list(x))
 
-os.chdir(facultyFolder) # changes directory to Faculty folder
+faculty_path = Path(facultyFolder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{facultyFolder}' is not a directory")
+	sys.exit(2)
 
-for FacultyName in os.listdir("."):	
-	if FacultyName.find(",") > -1:
+os.chdir(faculty_path) # changes directory to Faculty folder
+
+for FacultyName in os.listdir("."):
+	# only consider directories named like 'Last, First'
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		print(f'Adding undergraduate research classes for {FacultyName} ',end='')
-		personal_folder = FacultyName +os.sep +emplid_file
+		personal_folder = Path(FacultyName) / emplid_file
+		if not personal_folder.is_file():
+			print(' (missing employee_id)')
+			continue
 		with open(personal_folder, "r") as f:
-			employee_id = int(f.read().strip())
-		
+			try:
+				employee_id = int(f.read().strip())
+			except Exception:
+				print(' (invalid employee_id)')
+				continue
+
 		# Get entries for this faculty
-		entries=df.loc[df["Advisor ID"].astype(int) == employee_id]
+		entries = df.loc[df["Advisor ID"].astype(int) == employee_id]
 		if entries.shape[0] > 0:
-			toAppend = entries[['Students','Title','Program Type','Term','Calendar Year']]			
-			filename = FacultyName +os.sep +destination
-			if Path(filename).is_file():
-				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
-			excelFile = pd.read_excel(filename,sheet_name='Data')
-			
-			result = pd.concat([excelFile, toAppend],ignore_index=True)
-			result = result.drop_duplicates()
-			result.sort_values(by=['Calendar Year','Term','Program Type','Students'],ascending=[True,False,True,True],inplace=True)
-			
-			with pd.ExcelWriter(filename) as writer:
-				result.to_excel(writer,sheet_name='Data',index=False)
-			print(f'Appended {result.shape[0] -excelFile.shape[0]}')
+			toAppend = entries[['Students','Title','Program Type','Term','Calendar Year']]
+			filename = Path(FacultyName) / destination
+
+			# ensure destination folder exists
+			filename.parent.mkdir(parents=True, exist_ok=True)
+
+			# ensure backup path exists
+			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
+			if filename.is_file():
+				copy_with_timestamp(filename, str(backup_path))
+				existing_data = pd.read_excel(filename, sheet_name='Data')
+				result = merge_and_dedup(existing_data, toAppend, ignore_cols=['Title']).sort_values(by=['Calendar Year','Term','Program Type','Students'], ascending=[True,False,True,True])
+				with pd.ExcelWriter(filename) as writer:
+					result.to_excel(writer, sheet_name='Data', index=False)
+				print(f'Appended {result.shape[0] - existing_data.shape[0]}')
+			else:
+				with pd.ExcelWriter(filename) as writer:
+					toAppend.to_excel(writer, sheet_name='Data', index=False)
+				print(f'New {toAppend.shape[0]}')
 		else:
 			print(f'No entries')

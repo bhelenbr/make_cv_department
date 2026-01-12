@@ -6,8 +6,11 @@ import shutil
 import pandas as pd
 import argparse
 from pathlib import Path
+
 from make_cv.stringprotect import abbreviate_name
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
+
 
 # ---------------- CLI ----------------
 parser = argparse.ArgumentParser(
@@ -27,21 +30,25 @@ backup_dir = "make_cv/Backups"
 
 # ---------------- Load data ----------------
 committees = pd.read_excel(source)
-
 committees = committees[committees["Calendar Year"] == year]
-
 committees["Faculty"] = (
 	committees["Faculty"]
 	.astype(str)
 	.apply(lambda x: abbreviate_name(x,first_initial_only=True).lower())
 )
-
 committees.fillna(value={"Comments": ""}, inplace=True)
 
 # ---------------- Scatter ----------------
-os.chdir(facultyFolder)
+faculty_path = Path(facultyFolder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{facultyFolder}' is not a directory")
+	sys.exit(2)
+
+os.chdir(faculty_path)
 
 for FacultyName in os.listdir("."):
+	if not Path(FacultyName).is_dir():
+		continue
 	if FacultyName.find(",") > -1:
 		print(f"Adding service entries to {FacultyName}: ",end="")
 
@@ -49,33 +56,37 @@ for FacultyName in os.listdir("."):
 		entries = committees[committees["Faculty"] == faculty_key]
 		if entries.shape[0] > 0:
 			toAppend = entries.drop(columns=["Faculty", "Department"], errors="ignore")
-			
-			service_dir = Path(FacultyName) / "Service"			
+            
+			service_dir = Path(FacultyName) / "Service"            
 			filename = service_dir / "service data.xlsx"
-			
+
+			# ensure dirs
+			service_dir.mkdir(parents=True, exist_ok=True)
+			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
 			# ---------------- Read existing file ----------------
-			copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
-			excelFile = pd.read_excel(filename, sheet_name=None)
-			existing_data = excelFile.get("Data", pd.DataFrame())
-			existing_data.fillna(value={"Comments": ""}, inplace=True)
-			notes = excelFile.get("Notes", pd.DataFrame())
-			
-			# ---------------- Merge ----------------
-			result = (
-				pd.concat([existing_data, toAppend], ignore_index=True)
-				.drop_duplicates()
-				.sort_values(
-					by=["Calendar Year", "Term", "Description"],
-					ascending=[True, False, True]
-				)
+			if filename.is_file():
+				copy_with_timestamp(filename, str(backup_path))
+				excelFile = pd.read_excel(filename, sheet_name=None)
+				existing_data = excelFile.get("Data", pd.DataFrame())
+				existing_data.fillna(value={"Comments": ""}, inplace=True)
+				notes = excelFile.get("Notes", pd.DataFrame())
+			else:
+				existing_data = pd.DataFrame()
+				notes = pd.DataFrame()
+            
+			result = merge_and_dedup(existing_data,toAppend,ignore_cols=[]).sort_values(
+				by=["Calendar Year", "Term", "Description"],
+				ascending=[True, False, True]
 			)
-			
-			
+            
 			# ---------------- Write ----------------
 			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
 				notes.to_excel(writer, sheet_name="Notes", index=False)
 				result.to_excel(writer, sheet_name="Data", index=False)
-			print(f'Appended {result.shape[0] -existing_data.shape[0]}')
+			appended = max(0, result.shape[0] - existing_data.shape[0])
+			print(f'Appended {appended}')
 		else:
 			print('No entries')
 

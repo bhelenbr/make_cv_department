@@ -25,10 +25,15 @@ students = pd.read_excel(source,sheet_name='Current Students')
 students.drop(students.columns[7:], axis=1, inplace=True)
 students = students.fillna("")
 destination = "Scholarship" +os.sep +"current student data.xlsx"
+faculty_path = Path(file_destination)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{file_destination}' is not a directory")
+	sys.exit(2)
+
 os.chdir(file_destination) # changes directory to Faculty folder
 
 for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1:
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		lastname = FacultyName.lower()[0:FacultyName.find(",")]
 		entries=students[students["Advisor"].apply(lambda x: x.lower().find(lastname) != -1)]
 		if entries.shape[0] > 0:

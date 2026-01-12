@@ -14,16 +14,20 @@ from pathlib import Path
 
 from make_cv.stringprotect import abbreviate_name
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_keep_old_columns
 
-# TITLES IN SOURCE DATA
-# "Faculty ID","First Name","Last Name","Contributor Type","Percent Effort","Grouped Award ID","Budget Period","Principal Investigators","Award Status","Title","Award Start Date","Award End Date","Funding Agency / Sponsor","Total # of Funding Periods","Award ID / Contract ID","Award Total Funding","Award Total Direct Funding"
 
-# TITLES IN DESTINATION
-# "Proposal_ID","Faculty","Sponsor","Allocated Amt","Total Cost","Funded?","Title","Begin Date","End Date","Submit Date","Principal Investigators"
+source = sys.argv[1]
+faculty_folder = sys.argv[2]
+emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+backup_dir = "make_cv/Backups"
+subfolder = "Proposals & Grants"
+file_name = "grants.xlsx"
 
-# TITLES IN PROPOSAL SOURCE
-#"Proposal","Project","ID","Name","PCT","P_STATUS","Principal Investigators","Name","Allocated Amt","Total Cost","Status","Long Descr","Begin Date","End Date","RO Number","Submit Date"
+# Read the desired source file, which is the updated Proposal and Grants file with new entries
+df = pd.read_excel(source,skiprows=1,dtype={'Faculty ID': str})
 
+# Try to make the grant data look like the proposal data
 new_column_names = {   
 "Contributor Type": "Role",
 "Funding Agency / Sponsor": "Sponsor",
@@ -34,56 +38,6 @@ new_column_names = {
 "Percent Effort":"PCT",
 "Faculty ID":"ID"
 }
-
-emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
-backup_dir = "make_cv/Backups"
-
-# This to allow people to modify the Sponsor or Title for better formatting etc...
-def merge_keep_old_columns(df_new, df_old, cols_from_old):
-    # Join old columns onto new dataframe by index
-    df_merged = df_new.join(df_old[list(cols_from_old)], how="left", rsuffix="_old")
-
-    # Overwrite new columns with old values where available
-    for col in cols_from_old:
-        if col in df_merged:
-            df_merged[col] = df_merged[f"{col}_old"].combine_first(df_merged[col])
-            df_merged.drop(columns=f"{col}_old", inplace=True)
-
-    return df_merged
-    
-def merge_proposals(df_new, destination):
-	if exists(destination):
-		excelFile = pd.read_excel(destination, sheet_name=None,dtype={'Proposal_ID': str})
-		df_old = excelFile.get("Data", pd.DataFrame())
-		notes = excelFile.get("Notes", pd.DataFrame())
-		
-		# generate duplicate counters per value and modify "Proposal_ID" so that it is unique
-		# This is just in case someone adds something without a unique Proposal ID
-		dupe_count = df_old.groupby("Proposal_ID").cumcount()
-		# map 1 → 'b', 2 → 'c', ...
-		suffix = dupe_count.map(lambda x: "" if x == 0 else chr(ord('a') + x))
-		df_old["Proposal_ID"] = df_old["Proposal_ID"] + suffix
-		# set as index
-		df_old = df_old.set_index("Proposal_ID",drop=True)
-		
-		merged = merge_keep_old_columns(df_new,df_old,cols_from_old=["Sponsor", "Title"])
-		with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
-			notes.to_excel(writer, sheet_name="Notes", index=False)
-			merged.to_excel(writer, sheet_name="Data", index=True)
-		print(f'Appended {merged.shape[0]-df_old.shape[0]} grants')
-
-	else:
-		with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
-			df_new.to_excel(writer, sheet_name="Data",index=True)
-			notes = pd.DataFrame()
-			notes.to_excel(writer, sheet_name="Notes", index=False)
-		print(f'New {df_new.shape[0]} grants')
-
-# Read the desired source file, which is the updated Proposal and Grants file with new entries
-source = sys.argv[1]
-df = pd.read_excel(source,skiprows=1,dtype={'Faculty ID': str})
-
-# Try to make the grant data look like the proposal data
 df.rename(columns=new_column_names, inplace=True)
 df["Faculty"] = (
 	(df["First Name"].astype(str) +" " +df["Last Name"].astype(str))
@@ -92,25 +46,64 @@ df["Faculty"] = (
 df["Total Cost"] = df["Allocated Amt"]/df["PCT"].astype(float)*100.
 df.drop(["First Name","Last Name","Award Status","Total # of Funding Periods","Award ID / Contract ID"], axis=1,inplace=True)
 
-faculty_folder = sys.argv[2]
-subfolder = "Proposals & Grants"
-file_name = "grants.xlsx"
+faculty_path = Path(faculty_folder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{faculty_folder}' is not a directory")
+	sys.exit(2)
 
-for FacultyName in os.listdir(faculty_folder):
-	if FacultyName.find(",") > -1:
+os.chdir(faculty_path) # where files need to go
+
+for FacultyName in os.listdir("."):
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		# Get employee id
-		personal_folder = faculty_folder+os.sep +FacultyName +os.sep +emplid_file
+		personal_folder = Path(FacultyName) / emplid_file
+		if not personal_folder.is_file():
+			print(f"Skipping {FacultyName} (missing employee_id)")
+			continue
 		with open(personal_folder, "r") as f:
-			employee_id = int(f.read().strip())
+			try:
+				employee_id = int(f.read().strip())
+			except Exception:
+				print(f"Skipping {FacultyName} (invalid employee_id)")
+				continue
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["ID"])
 		idx = entries.groupby("Proposal_ID")["Budget Period"].idxmax()
 		entries = entries.loc[idx]
 		entries = entries.drop(columns = ["Budget Period"])
 		entries = entries.set_index("Proposal_ID",drop=True)
-		
-		print(f"Adding proposals & grants to {FacultyName}: ", end ="")
-		destination = faculty_folder+os.sep +FacultyName +os.sep +subfolder +os.sep +file_name
-		if Path(destination).is_file():
-			copy_with_timestamp(destination,FacultyName+os.sep+backup_dir)
-		merge_proposals(entries,destination)
+        
+		print(f"Adding grants to {FacultyName}: ", end ="")
+		destination = Path(FacultyName) / subfolder / file_name
+
+		# ensure parent and backup dirs
+		destination.parent.mkdir(parents=True, exist_ok=True)
+		backup_path = Path(FacultyName) / Path(backup_dir)
+		backup_path.mkdir(parents=True, exist_ok=True)
+
+		if destination.is_file():
+			copy_with_timestamp(destination, str(backup_path))
+			excelFile = pd.read_excel(destination, sheet_name=None,dtype={'Proposal_ID': str})
+			df_old = excelFile.get("Data", pd.DataFrame())
+			notes = excelFile.get("Notes", pd.DataFrame())
+            
+			# generate duplicate counters per value and modify "Proposal_ID" so that it is unique
+			dupe_count = df_old.groupby("Proposal_ID").cumcount()
+			# map 1 → 'b', 2 → 'c', ...
+			suffix = dupe_count.map(lambda x: "" if x == 0 else chr(ord('a') + x))
+			df_old["Proposal_ID"] = df_old["Proposal_ID"] + suffix
+			# set as index
+			df_old = df_old.set_index("Proposal_ID",drop=True)
+			merged = merge_keep_old_columns(entries,df_old,cols_from_old=["Sponsor", "Title"])
+			with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
+				notes.to_excel(writer, sheet_name="Notes", index=False)
+				merged.to_excel(writer, sheet_name="Data", index=True)
+			print(f'Appended {merged.shape[0]-df_old.shape[0]} grants')
+		else:
+			with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
+				entries.to_excel(writer, sheet_name="Data",index=True)
+				notes = pd.DataFrame()
+				notes.to_excel(writer, sheet_name="Notes", index=False)
+			print(f'New {entries.shape[0]} grants')
+
+			

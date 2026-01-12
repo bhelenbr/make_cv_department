@@ -11,37 +11,54 @@ import sys
 from pathlib import Path
 
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
 
-faculty_dir = sys.argv[2]
-source_file = sys.argv[1]
-emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+facultyFolder = sys.argv[2]
+source = sys.argv[1]
+emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
 backup_dir = "make_cv/Backups"
 
-df = pd.read_excel(source_file,skiprows=1,dtype={'ID': str})
+df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
 
-os.chdir(faculty_dir) # where files need to go
+faculty_path = Path(facultyFolder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{facultyFolder}' is not a directory")
+	sys.exit(2)
+
+os.chdir(faculty_path) # where files need to go
 
 count = 1
 for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1:
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		print(f'Adding advising evals for {FacultyName}: ', end="")
 		# Get employee id
-		personal_folder = FacultyName +os.sep +emplid_file
+		personal_folder = Path(FacultyName) / emplid_file
+		if not personal_folder.is_file():
+			print(' (missing employee_id)')
+			continue
 		with open(personal_folder, "r") as f:
-			employee_id = int(f.read().strip())
-			
+			try:
+				employee_id = int(f.read().strip())
+			except Exception:
+				print(' (invalid employee_id)')
+				continue
+
 		entries = df.loc[df['ID'].astype(int) == employee_id]
 		if entries.shape[0] > 0:
-			filename = FacultyName +os.sep +"Service" +os.sep +"advising evaluation data.xlsx"
-			if Path(filename).is_file():
-				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
-				excelFile = pd.read_excel(filename,dtype={'ID': str})
-				result = pd.concat([excelFile, entries],ignore_index=True)
-				result = result.drop_duplicates()
-				result.sort_values(by=['Term','Number'],ascending=[True,True],inplace=True)					
+			filename = Path(FacultyName) / "Service" / "advising evaluation data.xlsx"
+
+			# ensure parent and backup
+			filename.parent.mkdir(parents=True, exist_ok=True)
+			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
+			if filename.is_file():
+				copy_with_timestamp(filename, str(backup_path))
+				existing_data = pd.read_excel(filename,dtype={'ID': str})
+				result = merge_and_dedup(existing_data, entries, ignore_cols=[]).sort_values(by=['Term','Number'],ascending=[True,True])			
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
-				print(f'Appended {result.shape[0] -excelFile.shape[0]}')
+				print(f'Appended {result.shape[0] -existing_data.shape[0]}')
 			else:
 				with pd.ExcelWriter(filename) as writer:
 					entries.to_excel(writer,index=False)

@@ -5,11 +5,13 @@ import sys
 import shutil
 import pandas as pd
 import argparse
+import re
 from pathlib import Path
+
 from make_cv.stringprotect import abbreviate_name
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
 
-import re
 
 # ---------------- CLI ----------------
 parser = argparse.ArgumentParser(
@@ -22,7 +24,7 @@ parser.add_argument('-y', '--year', type=int, required=True,
 
 args = parser.parse_args()
 
-departments_root = args.destination
+facultyFolder = args.destination
 source = args.file
 year = args.year
 backup_dir = "make_cv/Backups"
@@ -33,6 +35,13 @@ capstones = pd.read_excel(source, sheet_name='Grades')
 # Clean column names
 capstones.columns = [col.strip() for col in capstones.columns]
 
+# Validate required columns
+required_cols = {'Honors Mentor', 'Last name', 'First name', 'Title of Your Capstone', 'Grad'}
+missing = required_cols - set(capstones.columns)
+if missing:
+	print(f"Error: input file is missing required columns: {', '.join(sorted(missing))}")
+	sys.exit(2)
+
 # Clean and abbreviate mentor names
 def clean_mentor_name(mentor):
 	if pd.isna(mentor):
@@ -42,12 +51,10 @@ def clean_mentor_name(mentor):
 	mentor = re.sub(r'\(.*?\)', '', mentor).strip()
 	# Remove titles
 	mentor = re.sub(r'(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.)', '', mentor).strip()
+	mentor = abbreviate_name(mentor, first_initial_only=True).lower()
 	return mentor
 
-capstones['Honors Mentor Clean'] = capstones['Honors Mentor'].apply(clean_mentor_name)
-capstones['mentor_key'] = capstones['Honors Mentor Clean'].apply(
-	lambda x: abbreviate_name(x, first_initial_only=True).lower() if x else ''
-)
+capstones['mentor_key'] = capstones['Honors Mentor'].apply(clean_mentor_name)
 
 # Function to map Grad to Term
 def map_grad_to_term(grad):
@@ -74,58 +81,65 @@ capstones['Term'] = capstones['Grad'].apply(map_grad_to_term)
 #	 (capstones['CASPER ONLY SIGNED BY DIRECTOR'] == 'Yes')
 # ]
 
-# ---------------- Scatter ----------------
-def process_faculty_folder(faculty_path, FacultyName):
-	print(f"Adding honors research entries to {FacultyName}: ", end="")
+# Walk the departments root to find faculty Service folders
+faculty_path = Path(facultyFolder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{facultyFolder}' is not a directory")
+	sys.exit(2)
 
-	faculty_key = abbreviate_name(FacultyName, first_initial_only=True).lower()
-	entries = capstones[capstones['mentor_key'] == faculty_key]
+os.chdir(faculty_path)
 
-	if entries.shape[0] > 0:
-		toAppend = pd.DataFrame([
-			{
-				'Students': f"{row['Last name'].strip()}, {row['First name'].strip()}",
-				'Title': row['Title of Your Capstone'],
-				'Program Type': 'Honors Capstone',
-				'Term': row['Term'],
-				'Calendar Year': year
-			}
-			for _, row in entries.iterrows()
-		])
+for FacultyName in os.listdir("."):
+	# only consider directories named like 'Last, First'
+	if not Path(FacultyName).is_dir():
+		continue
+	if FacultyName.find(",") > -1:
+		print(f'Adding honors theses for {FacultyName} ',end='')
+		faculty_key = abbreviate_name(FacultyName, first_initial_only=True).lower()
+		entries = capstones[capstones['mentor_key'] == faculty_key]
 
-		service_dir = faculty_path / "Service"
-		filename = service_dir / "undergraduate research data.xlsx"
-		if Path(filename).is_file():
-			copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
-		
-		# ---------------- Read existing file ----------------
-		excelFile = pd.read_excel(filename, sheet_name=None)
-		existing_data = excelFile.get("Data", pd.DataFrame())
-		notes = excelFile.get("Notes", pd.DataFrame())
+		if entries.shape[0] > 0:
+			toAppend = pd.DataFrame([
+				{
+					'Students': f"{row['Last name'].strip()}, {row['First name'].strip()}",
+					'Title': row['Title of Your Capstone'],
+					'Program Type': 'Honors Capstone',
+					'Term': row['Term'],
+					'Calendar Year': year
+				}
+				for _, row in entries.iterrows()
+			])
 
-		# ---------------- Merge ----------------
-		result = (
-			pd.concat([existing_data, toAppend], ignore_index=True)
-			.drop_duplicates()
-			.sort_values(
-				by=["Calendar Year", "Term", "Title"],
+			service_dir = Path(FacultyName) / "Service"           
+			filename = service_dir / "undergraduate research data.xlsx"
+
+			# ensure service_dir exists
+			service_dir.mkdir(parents=True, exist_ok=True)
+
+			# prepare backup dir path and ensure it exists
+			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
+			# ---------------- Read existing file ----------------
+			if filename.is_file():
+				copy_with_timestamp(filename, str(backup_path))
+				excelFile = pd.read_excel(filename, sheet_name=None)
+				existing_data = excelFile.get("Data", pd.DataFrame())
+				notes = excelFile.get("Notes", pd.DataFrame())
+			else:
+				existing_data = pd.DataFrame()
+				notes = pd.DataFrame()
+			
+			result = merge_and_dedup(existing_data,toAppend,ignore_cols=['Title']).sort_values(
+				by=["Calendar Year", "Term", "Program Type"],
 				ascending=[True, False, True]
 			)
-		)
-
-		# ---------------- Write ----------------
-		with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
-			notes.to_excel(writer, sheet_name="Notes", index=False)
-			result.to_excel(writer, sheet_name="Data", index=False)
-		print(f'Appended {result.shape[0] - existing_data.shape[0]}')
-	else:
-		print('No entries')
-
-# Walk the departments root to find faculty Service folders
-for root, dirs, files in os.walk(departments_root):
-	if 'Service' in dirs:
-		faculty_path = Path(root)
-		FacultyName = faculty_path.name
-		if ',' in FacultyName:  # Assume faculty folders have comma
-			process_faculty_folder(faculty_path, FacultyName)
+			# ---------------- Write ----------------
+			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
+				notes.to_excel(writer, sheet_name="Notes", index=False)
+				result.to_excel(writer, sheet_name="Data", index=False)
+			appended = max(0, result.shape[0] - existing_data.shape[0])
+			print(f'Appended {appended}')
+		else:
+			print('No entries')
 			

@@ -3,12 +3,14 @@
 import os
 import pandas as pd
 import sys
+from pathlib import Path
+
 from make_cv.stringprotect import abbreviate_name
 
 # --------- CONFIGURATION ---------
 excel_file = sys.argv[1]
 faculty_folder = sys.argv[2]   # CHANGE THIS
-output_filename = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
+output_filename = Path("make_cv") / "PersonalData" / "employee_id.txt"
 sheet_name = 0  # first sheet
 # ---------------------------------
 
@@ -23,14 +25,20 @@ df["Faculty"] = (
 df["EMPLID"] = df["EMPLID"].str.strip()
 
 # Loop through employees
+faculty_path = Path(faculty_folder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{faculty_folder}' is not a directory")
+	sys.exit(2)
+
 for FacultyName in os.listdir(faculty_folder):
-	if FacultyName[0].isalnum():
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		print(f"Writing ID for {FacultyName}")
-		name = abbreviate_name(FacultyName,first_initial_only=True).lower();
+		name = abbreviate_name(FacultyName,first_initial_only=True).lower()
 		entries=df[df["Faculty"]==name]
 		if len(entries) == 1:
 			employee_id = int(entries["EMPLID"].iloc[0])
-			output_path = os.path.join(faculty_folder +os.sep +FacultyName, output_filename)
+			output_path = Path(faculty_path) / FacultyName / output_filename
+			output_path.parent.mkdir(parents=True, exist_ok=True)
 			with open(output_path, "w") as f:
 				f.write(f"{employee_id}")
 		else:

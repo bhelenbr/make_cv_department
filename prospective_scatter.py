@@ -13,27 +13,24 @@ import openpyxl
 
 from make_cv.stringprotect import abbreviate_name
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
 
 import sys
 import os
 from pathlib import Path
 import pandas as pd
 
-faculty_dir = sys.argv[2]
-source_file = sys.argv[1]
+facultyFolder = sys.argv[2]
+source = sys.argv[1]
 backup_dir = "make_cv/Backups"
 
 # --- Load data ---
-df = pd.read_excel(source_file)
-
+df = pd.read_excel(source)
 df.fillna(value={"Staff": "", "Deposit": ""}, inplace=True)
-
 df["Deposit"] = (df["Deposit"] == "Deposit").astype(int)
-
 df["Staff"] = df["Staff"].apply(
 	lambda x: abbreviate_name(x.split("-")[0].strip()) if "-" in x else abbreviate_name(x,first_initial_only=True)
 )
-
 df["Year"] = df["Date of Visit"].astype(str).str[:4].astype(int)
 
 # --- Aggregate ---
@@ -47,39 +44,36 @@ table = (
 )
 
 # --- Write per faculty ---
-os.chdir(faculty_dir)
+faculty_path = Path(facultyFolder)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{facultyFolder}' is not a directory")
+	sys.exit(2)
 
-for advisor, entries in table.groupby("Staff"):
-	
-	for FacultyName in os.listdir("."):
-		if not FacultyName[0].isalnum():
-			continue
+os.chdir(faculty_path)
 
-		
-		if advisor.lower().find(abbreviate_name(FacultyName,first_initial_only=True)) == -1:
-			continue
-		
-		filename = (
-			FacultyName
-			+ os.sep
-			+ "Service"
-			+ os.sep
-			+ "prospective visit data.xlsx"
-		)
+for FacultyName in os.listdir("."):
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+		print(f'Adding prospective visit data for {FacultyName}: ', end="")
+		faculty_key = abbreviate_name(FacultyName, first_initial_only=True).lower()
+		entries = table[table['Staff'] == faculty_key]
+		if entries.shape[0] > 0:
 
-		Path(filename).parent.mkdir(parents=True, exist_ok=True)
+			filename = Path(FacultyName) / "Service" / "prospective visit data.xlsx"
 
-		if Path(filename).is_file():
-			copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
-			existing = pd.read_excel(filename)
-			result = (
-				pd.concat([existing, entries], ignore_index=True)
-				  .drop_duplicates()
-				  .sort_values(by=["Year"])
-			)
+			filename.parent.mkdir(parents=True, exist_ok=True)
+			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
+			if filename.is_file():
+				copy_with_timestamp(filename, str(backup_path))
+				existing = pd.read_excel(filename)
+				result = merge_and_dedup(existing, entries, ignore_cols=[]).sort_values(by=["Year"])
+			else:
+				result = entries.sort_values(by=["Year"])
+
+			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
+				result.to_excel(writer, index=False)
+			print(f'Appended {result.shape[0] - existing.shape[0]}')
 		else:
-			result = entries.sort_values(by=["Year"])
-		
-		with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
-			result.to_excel(writer, index=False)
+			print('No entries')
 	
