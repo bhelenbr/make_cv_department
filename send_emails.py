@@ -24,11 +24,12 @@ NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"collaborators.xlsx"
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-AUTH_EMAIL = "thuguda@clarkson.edu"
-AUTH_PASSWORD = "kichjbhkyhukldci"  # Must be valid App Password
+AUTH_EMAIL = ""
+AUTH_PASSWORD = ""  # Must be valid App Password
 
 DELEGATED_EMAIL = "far@clarkson.edu"
 DELEGATED_NAME = "FAR Team"
+REPLY_TO_EMAIL = "far@clarkson.edu"
 
 SUBJECT = "2025 Faculty Activity Report (FAR) Draft – Review & Submission Required"
 
@@ -134,6 +135,7 @@ for FacultyName in os.listdir("."):
         msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
         msg["To"] = recipient
         msg["Cc"] = supervisor
+        msg["Reply-To"] = REPLY_TO_EMAIL
         msg["Subject"] = SUBJECT
 
         print(recipient)
