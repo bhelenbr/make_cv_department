@@ -2,7 +2,6 @@
 
 import os
 import sys
-import shutil
 import pandas as pd
 import argparse
 import re
@@ -27,7 +26,7 @@ args = parser.parse_args()
 facultyFolder = args.destination
 source = args.file
 year = args.year
-backup_dir = "make_cv/Backups"
+backup_dir = Path("make_cv") / "Backups"
 
 # ---------------- Load data ----------------
 capstones = pd.read_excel(source, sheet_name='Grades')
@@ -87,12 +86,11 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{facultyFolder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path)
-
-for FacultyName in os.listdir("."):
-	# only consider directories named like 'Last, First'
-	if not Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
 		continue
+	FacultyName = faculty_dir.name
+	# only consider directories named like 'Last, First'
 	if FacultyName.find(",") > -1:
 		print(f'Adding honors theses for {FacultyName} ',end='')
 		faculty_key = abbreviate_name(FacultyName, first_initial_only=True).lower()
@@ -110,16 +108,14 @@ for FacultyName in os.listdir("."):
 				for _, row in entries.iterrows()
 			])
 
-			service_dir = Path(FacultyName) / "Service"           
+			service_dir = faculty_dir / "Service"           
 			filename = service_dir / "undergraduate research data.xlsx"
-
-			# ensure service_dir exists
-			service_dir.mkdir(parents=True, exist_ok=True)
-
-			# prepare backup dir path and ensure it exists
-			backup_path = Path(FacultyName) / Path(backup_dir)
+			
+			# ensure parent and backup
+			filename.parent.mkdir(parents=True, exist_ok=True)
+			backup_path = faculty_dir / Path(backup_dir)
 			backup_path.mkdir(parents=True, exist_ok=True)
-
+			
 			# ---------------- Read existing file ----------------
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
@@ -138,8 +134,7 @@ for FacultyName in os.listdir("."):
 			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
 				notes.to_excel(writer, sheet_name="Notes", index=False)
 				result.to_excel(writer, sheet_name="Data", index=False)
-			appended = max(0, result.shape[0] - existing_data.shape[0])
-			print(f'Appended {appended}')
+			print(f'Appended {result.shape[0] - existing_data.shape[0]}')
 		else:
 			print('No entries')
 			

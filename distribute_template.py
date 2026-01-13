@@ -15,7 +15,7 @@ if platform.system() == 'Windows':
 	file_destination = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
 else:
 	file_destination = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
-	
+    
 # Graphically select file to scatter
 import tkinter as tk
 from tkinter import filedialog
@@ -28,11 +28,16 @@ source = filedialog.askopenfilename(title='Select file to scatter to Faculty dir
 subfolder = tk.simpledialog.askstring('Name of Subfolder', 'Type name')
 
 print(subfolder)
-os.chdir(file_destination) # changes directory to that of the file destination
-
-for FacultyName in os.listdir(file_destination): # For each faculty member
-    if not FacultyName.startswith('.'): # gets rid of hidden files generated, allows for only faculty names left
-        list = os.listdir(FacultyName+os.sep+subfolder) # provides list of files in subfolder of each faculty member
-        if not os.path.basename(source) in list: # if the excel file not in list
-        	shutil.copy(source, FacultyName +os.sep +subfolder) # move file to desired folder if doesn't exist
+base_path = Path(file_destination)
+for faculty_dir in base_path.iterdir(): # For each faculty member
+	if not faculty_dir.is_dir() or faculty_dir.name.startswith('.'):
+		continue
+	subfolder_path = faculty_dir / subfolder
+	try:
+		existing = [p.name for p in subfolder_path.iterdir()]
+	except Exception:
+		existing = []
+	if os.path.basename(source) not in existing:
+		subfolder_path.mkdir(parents=True, exist_ok=True)
+		shutil.copy(source, subfolder_path)
 

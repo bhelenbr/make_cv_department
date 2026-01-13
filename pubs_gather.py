@@ -11,6 +11,7 @@
 
 
 import os, sys, platform
+from pathlib import Path
 import bibtexparser
 import pandas as pd
 
@@ -39,7 +40,7 @@ writer.order_entries_by = None
 
 articles = BibDatabase()
 for FacultyName in os.listdir(file_source): # For each faculty member
-	if FacultyName[0].isalnum(): # gets rid of hidden files generated, allows for only faculty names left
+	if FacultyName.find(",") > -1 and Path(os.path.join(file_source, FacultyName)).is_dir():
 		try:
 			with open(file_source +os.sep +FacultyName+os.sep+folder +os.sep +"scholarship.bib") as bibtex_file:
 				tbparser = BibTexParser(common_strings=True)

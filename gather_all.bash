@@ -31,6 +31,12 @@ if [ ! -d Historical/${YEAR} ]; then
 fi
 mv -n "service data.xlsx" Historical/${YEAR}
 service_gather.py "$1"
+mv -n "advisee counts.xlsx" Historical/${YEAR}
+mv -n "advising evaluation data.xlsx" Historical/${YEAR}
+mv -n "prospective visit data.xlsx" Historical/${YEAR}
+advisee_counts_gather.py "$1"
+advising_eval_gather.py "$1"
+prospective_gather.py "$1"
 cd ..
 
 echo "Awards"
@@ -59,6 +65,10 @@ if [ ! -d Historical/${YEAR} ]; then
 fi
 mv -n "proposals & grants.xlsx" Historical/${YEAR}
 srs_gather.py "$1"
+mv -n "expenditures.xlsx" Historical/${YEAR}
+mv -n "grants.xlsx" Historical/${YEAR}
+expenditures_gather.py "$1"
+grants_gather.py "$1"
 cd ..
 
 echo "Scholarship"
@@ -111,4 +121,18 @@ mv -n "thesis data.xlsx" Historical/${YEAR}
 mv -n "current student data.xlsx" Historical/${YEAR}
 thesis_gather.py "$1"
 current_grads_gather.py "$1"
+cd ..
+
+echo "Teaching"
+if [ ! -d Teaching ]; then
+  mkdir Teaching
+  mkdir Teaching/Historical
+fi
+cd Teaching
+if [ ! -d Historical/${YEAR} ]; then
+  mkdir Historical/${YEAR}
+fi
+mv -n "teaching evaluation data.xlsx" Historical/${YEAR}
+teaching_eval_gather.py "$1"
+cd ..
 cd ..

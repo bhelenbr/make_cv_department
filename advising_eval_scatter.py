@@ -25,14 +25,15 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{facultyFolder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path) # where files need to go
-
 count = 1
-for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
+	if FacultyName.find(",") > -1:
 		print(f'Adding advising evals for {FacultyName}: ', end="")
 		# Get employee id
-		personal_folder = Path(FacultyName) / emplid_file
+		personal_folder = faculty_dir / emplid_file
 		if not personal_folder.is_file():
 			print(' (missing employee_id)')
 			continue
@@ -45,11 +46,11 @@ for FacultyName in os.listdir("."):
 
 		entries = df.loc[df['ID'].astype(int) == employee_id]
 		if entries.shape[0] > 0:
-			filename = Path(FacultyName) / "Service" / "advising evaluation data.xlsx"
+			filename = faculty_dir / "Service" / "advising evaluation data.xlsx"
 
 			# ensure parent and backup
 			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path = faculty_dir / Path(backup_dir)
 			backup_path.mkdir(parents=True, exist_ok=True)
 
 			if filename.is_file():

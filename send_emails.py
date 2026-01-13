@@ -116,20 +116,26 @@ skipped = 0
 
 df["FacultyName"] = df["LAST_NAME"].astype(str) +', ' +df["FIRST_NAME"].astype(str)
 
-os.chdir(file_destination)
-
-for FacultyName in os.listdir("."):
-    if FacultyName.find(",") > -1:
-        print(f'Sending e-mail for {FacultyName}: ', end="")
-        entries = df[df['FacultyName'] == FacultyName]
-        if not entries.shape[0] == 1:
-            print('Uh-oh' +FacultyName)
-            skipped += 1
-            continue
-        recipient = entries["JJs Email list"].iloc[0]
-        supervisor = entries["Supervisor Email"].iloc[0]
-        greeting_name = entries["LAST_NAME"].iloc[0]
-        shutil.copyfile(Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +"far.docx"), Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +FacultyName +" FAR.docx"))
+base_path = Path(file_destination)
+for faculty_dir in base_path.iterdir():
+    if not faculty_dir.is_dir() or faculty_dir.name.find(",") == -1:
+        continue
+    FacultyName = faculty_dir.name
+    print(f'Sending e-mail for {FacultyName}: ', end="")
+    entries = df[df['FacultyName'] == FacultyName]
+    if not entries.shape[0] == 1:
+        print('Uh-oh' +FacultyName)
+        skipped += 1
+        continue
+    recipient = entries["JJs Email list"].iloc[0]
+    supervisor = entries["Supervisor Email"].iloc[0]
+    greeting_name = entries["LAST_NAME"].iloc[0]
+    draft_src = faculty_dir / FAR_DRAFT_PATH / "far.docx"
+    draft_dst = faculty_dir / FAR_DRAFT_PATH / (FacultyName + " FAR.docx")
+    try:
+        shutil.copyfile(draft_src, draft_dst)
+    except Exception:
+        print(f"Warning: could not copy draft for {FacultyName}")
 
         msg = EmailMessage()
         msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"

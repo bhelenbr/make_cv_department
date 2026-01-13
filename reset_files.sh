@@ -3,7 +3,6 @@
 # This script resets folders
 # Argument 1 is the location of make_cv
 # Argument 2 is the department folder
-
 cd "$2"
 for file in *; do
 	rm ${file}/*/*.xlsx;
@@ -14,4 +13,3 @@ for file in *; do
 	replace_line.sh "${file}/make_cv/FAR/make_cv.cfg" "${file}/make_cv/FAR_docx/make_cv.cfg" "orcid =";
 	replace_line.sh "${file}/make_cv/FAR_docx/make_cv.cfg" "${file}/make_cv/Collaborators/make_cv.cfg" "gradthesesfile =";
 done
-	 

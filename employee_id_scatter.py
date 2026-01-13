@@ -30,14 +30,15 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{faculty_folder}' is not a directory")
 	sys.exit(2)
 
-for FacultyName in os.listdir(faculty_folder):
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if faculty_dir.is_dir() and faculty_dir.name.find(",") > -1:
+		FacultyName = faculty_dir.name
 		print(f"Writing ID for {FacultyName}")
 		name = abbreviate_name(FacultyName,first_initial_only=True).lower()
 		entries=df[df["Faculty"]==name]
 		if len(entries) == 1:
 			employee_id = int(entries["EMPLID"].iloc[0])
-			output_path = Path(faculty_path) / FacultyName / output_filename
+			output_path = faculty_dir / output_filename
 			output_path.parent.mkdir(parents=True, exist_ok=True)
 			with open(output_path, "w") as f:
 				f.write(f"{employee_id}")

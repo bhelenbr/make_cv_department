@@ -46,12 +46,13 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{faculty_folder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path) # where files need to go
-
-for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
+	if FacultyName.find(",") > -1:
 		# Get employee id
-		personal_folder = Path(FacultyName) / emplid_file
+		personal_folder = faculty_dir / emplid_file
 		if not personal_folder.is_file():
 			print(f"Skipping {FacultyName} (missing employee_id)")
 			continue
@@ -64,10 +65,10 @@ for FacultyName in os.listdir("."):
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["ID"])
 		print(f"Adding proposals & grants to {FacultyName}: ", end ="")
-		destination = Path(FacultyName) / subfolder / file_name
+		destination = faculty_dir / subfolder / file_name
 
 		destination.parent.mkdir(parents=True, exist_ok=True)
-		backup_path = Path(FacultyName) / Path(backup_dir)
+		backup_path = faculty_dir / Path(backup_dir)
 		backup_path.mkdir(parents=True, exist_ok=True)
 
 		if destination.is_file():

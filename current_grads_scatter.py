@@ -30,10 +30,11 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{file_destination}' is not a directory")
 	sys.exit(2)
 
-os.chdir(file_destination) # changes directory to Faculty folder
-
-for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
+	if FacultyName.find(",") > -1:
 		lastname = FacultyName.lower()[0:FacultyName.find(",")]
 		entries=students[students["Advisor"].apply(lambda x: x.lower().find(lastname) != -1)]
 		if entries.shape[0] > 0:
@@ -44,5 +45,7 @@ for FacultyName in os.listdir("."):
 			entries.drop(columns=['Advisor', 'Initial Program','MS Start Date', 'MS Finish Date', 'PhD Start Date'],inplace=True)
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
 			print(entries)
-			with pd.ExcelWriter(FacultyName +os.sep +destination,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
+			out_path = faculty_dir / destination
+			out_path.parent.mkdir(parents=True, exist_ok=True)
+			with pd.ExcelWriter(out_path,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)

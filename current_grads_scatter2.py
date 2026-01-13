@@ -19,8 +19,8 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 source = sys.argv[1]
 file_destination = sys.argv[2]
-emplid_file = "make_cv" +os.sep +"PersonalData" +os.sep +"employee_id.txt"
-backup_dir = "make_cv/Backups"
+emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+backup_dir = Path("make_cv") / "Backups"
 
 df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
 df = df[df["Career"]=="GRAD"]
@@ -28,15 +28,32 @@ df = df[df["Career"]=="GRAD"]
 df.drop(columns=['ID','Email','Career','Advisor','Email.1'], axis=1, inplace=True)
 df = df.fillna("")
 destination = "Scholarship" +os.sep +"current student data.xlsx"
-os.chdir(file_destination) # changes directory to Faculty folder
+faculty_path = Path(file_destination)
+if not faculty_path.is_dir():
+	print(f"Error: destination '{file_destination}' is not a directory")
+	sys.exit(2)
 
-for FacultyName in os.listdir("."):
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
 		print(f'Adding graduate advisees for {FacultyName}: ', end="")
+
 		# Get employee id
-		personal_folder = FacultyName +os.sep +emplid_file
+		personal_folder = faculty_dir / emplid_file
+		if not personal_folder.is_file():
+			print(' (missing employee_id)')
+			continue
 		with open(personal_folder, "r") as f:
-			employee_id = int(f.read().strip())
+			try:
+				employee_id = int(f.read().strip())
+			except Exception:
+				print(' (invalid employee_id)')
+				continue
+
+
+
 		entries = df.loc[df['Advisor ID'].astype(int) == employee_id]
 		if entries.shape[0] > 0:
 			entries["Student Name"] = entries["Last"] + ", " + entries["First Name"]
@@ -45,9 +62,15 @@ for FacultyName in os.listdir("."):
 			entries = entries.drop(columns=["Last","First Name","Acad Plan","Advisor ID"])
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
 			
-			filename = FacultyName +os.sep +destination
+			# ensure parent and backup
+			# ensure parent and backup
+			filename = faculty_dir / destination
+			filename.parent.mkdir(parents=True, exist_ok=True)
+			backup_path = faculty_dir / Path(backup_dir)
+			backup_path.mkdir(parents=True, exist_ok=True)
+
 			if Path(filename).is_file():
-				copy_with_timestamp(filename,FacultyName+os.sep+backup_dir)
+				copy_with_timestamp(filename, str(backup_path))
 			with pd.ExcelWriter(filename,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)
 			print(f'{entries.shape[0]} entries')

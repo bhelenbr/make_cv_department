@@ -3,9 +3,7 @@
 import os
 import sys
 import pandas as pd
-import platform
-import shutil
-import openpyxl
+from pathlib import Path
 
 file = "undergraduate research data.xlsx"
 folder = "Service"
@@ -21,21 +19,31 @@ file_source = sys.argv[1]
 	
 file = "undergraduate research data.xlsx"
 
-tempcsv = "temp.csv"
-compilation = open(tempcsv, 'w+')
-compilation.write("Students,Title,Program Type,Term,Calendar Year,FacultyName\n")
-compilation.close()
+# collect dataframes in memory instead of writing a temp CSV
+collected = []
 
-for FacultyName in os.listdir(file_source): # For each faculty member
-	if FacultyName[0].isalnum(): # gets rid of hidden files generated, allows for only faculty names left
-		print("UR: " +FacultyName)
+source_path = Path(file_source)
+if not source_path.is_dir():
+	print(f"Error: source '{file_source}' is not a directory")
+	sys.exit(2)
+
+for faculty_dir in source_path.iterdir(): # For each faculty member
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
+	if FacultyName.find(",") > -1:
+		print("UR: " +FacultyName, end = " ")
 		try:
-			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+folder +os.sep +file, engine='openpyxl',sheet_name="Data")
+			path = faculty_dir / folder / file
+			sheet = pd.read_excel(path, engine='openpyxl', sheet_name="Data")
 			sheet["FacultyName"] = FacultyName
-			sheet.to_csv(open(tempcsv, 'a+'),index=False,header=False)
+			collected.append(sheet)
+			print(" - read " + str(sheet.shape[0]) + " rows")
 		except FileNotFoundError as e:
-			print("Could not read file",FacultyName)
+			print("Could not read file", FacultyName)
 		
-df = pd.read_csv(tempcsv)
-os.remove(tempcsv)
-excelfile = df.to_excel(file, index=False)
+if collected:
+	df = pd.concat(collected, ignore_index=True)
+	df.to_excel(file, index=False)
+else:
+	print("No data collected.")

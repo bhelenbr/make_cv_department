@@ -3,12 +3,12 @@
 import os,sys,platform,shutil
 import pandas as pd
 import re
-import xlrd
 from pathlib import Path
 from datetime import date
 
 from make_cv.stringprotect import abbreviate_name
 from copy_with_timestamp import copy_with_timestamp
+from merge_df import merge_and_dedup
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
@@ -29,14 +29,13 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{facultyFolder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path) # changes directory to Faculty folder
-
-for FacultyName in os.listdir("."):
-	if not Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
 		continue
+	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
 		print(f'Updating expenditures for {FacultyName} ',end='')
-		personal_folder = Path(FacultyName) / emplid_file
+		personal_folder = faculty_dir / emplid_file
 		if not personal_folder.is_file():
 			print(' (missing employee_id)')
 			continue
@@ -51,25 +50,21 @@ for FacultyName in os.listdir("."):
 		entries=df.loc[df["EMPLID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["EMPLID"])
 		if entries.shape[0] > 0:
-			filename = Path(FacultyName) / destination
+			filename = faculty_dir / destination
 			# ensure parent exists
 			filename.parent.mkdir(parents=True, exist_ok=True)
 
 			# ensure backup dir exists
-			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path = faculty_dir / Path(backup_dir)
 			backup_path.mkdir(parents=True, exist_ok=True)
 
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
-				excelFile = pd.read_excel(filename)
-				existing_data = excelFile
-				result = pd.concat([excelFile, entries],ignore_index=True)
-				result = result.drop_duplicates()
-				result.sort_values(by=['Year'],ascending=[True],inplace=True)
+				existing_data = pd.read_excel(filename)
+				result = merge_and_dedup(existing_data, entries, ignore_cols=[]).sort_values(by=['Year'],ascending=[True])
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
-				appended = max(0, result.shape[0] - existing_data.shape[0])
-				print(f'Appended {appended}')
+				print(f'Appended {result.shape[0] - existing_data.shape[0]}')
 			else:
 				with pd.ExcelWriter(filename) as writer:
 					entries.to_excel(writer,index=False)

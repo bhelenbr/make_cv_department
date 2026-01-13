@@ -28,10 +28,11 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{facultyFolder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path) # changes directory to Faculty folder
-
-for FacultyName in os.listdir("."):
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
+		continue
+	FacultyName = faculty_dir.name
+	if FacultyName.find(",") > -1:
 		print(f'Adding theses for {FacultyName} ',end='')
 
 		lastname = FacultyName[0:FacultyName.find(",")]
@@ -41,11 +42,11 @@ for FacultyName in os.listdir("."):
 		if entries.shape[0] > 0:
 			toAppend = entries.iloc[:,0:7]
             
-			filename = Path(FacultyName) / destination
+			filename = faculty_dir / destination
 
 			# ensure parent and backup
 			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path = faculty_dir / Path(backup_dir)
 			backup_path.mkdir(parents=True, exist_ok=True)
 
 			if filename.is_file():

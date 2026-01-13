@@ -121,7 +121,7 @@ fteaching = open('Tables/teaching_far.tex', 'a') # file to write
 
 br = open('Tables/bibresource.tex','w')
 for FacultyName in os.listdir(faculty_source): # For each faculty member
-	if FacultyName[0].isalnum(): # gets rid of hidden files generated, allows for only faculty names left
+	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
 		print(FacultyName)
 		headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +FacultyName +'}\n'
 		

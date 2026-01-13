@@ -44,11 +44,10 @@ if not faculty_path.is_dir():
 	print(f"Error: destination '{facultyFolder}' is not a directory")
 	sys.exit(2)
 
-os.chdir(faculty_path)
-
-for FacultyName in os.listdir("."):
-	if not Path(FacultyName).is_dir():
+for faculty_dir in faculty_path.iterdir():
+	if not faculty_dir.is_dir():
 		continue
+	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
 		print(f"Adding service entries to {FacultyName}: ",end="")
 
@@ -57,12 +56,12 @@ for FacultyName in os.listdir("."):
 		if entries.shape[0] > 0:
 			toAppend = entries.drop(columns=["Faculty", "Department"], errors="ignore")
             
-			service_dir = Path(FacultyName) / "Service"            
+			service_dir = faculty_dir / "Service"            
 			filename = service_dir / "service data.xlsx"
 
 			# ensure dirs
 			service_dir.mkdir(parents=True, exist_ok=True)
-			backup_path = Path(FacultyName) / Path(backup_dir)
+			backup_path = faculty_dir / Path(backup_dir)
 			backup_path.mkdir(parents=True, exist_ok=True)
 
 			# ---------------- Read existing file ----------------
@@ -85,8 +84,7 @@ for FacultyName in os.listdir("."):
 			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
 				notes.to_excel(writer, sheet_name="Notes", index=False)
 				result.to_excel(writer, sheet_name="Data", index=False)
-			appended = max(0, result.shape[0] - existing_data.shape[0])
-			print(f'Appended {appended}')
+			print(f'Appended {result.shape[0] -existing_data.shape[0]}')
 		else:
 			print('No entries')
 

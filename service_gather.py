@@ -6,6 +6,7 @@ import pandas as pd
 import platform
 import shutil
 import openpyxl
+from pathlib import Path
 
 # Run this script from the Department Data folder
 # This gathers service data from the faculty service data.xlsx file and compiles into a single csv file
@@ -18,21 +19,22 @@ file_source = sys.argv[1]
 	
 file = "service data.xlsx"
 
-tempcsv = "temp.csv"
-compilation = open(tempcsv, 'w+')
-compilation.write("Description,Type,Position,Term,Calendar Year,Hours/Semester,Comments,FacultyName\n")
-compilation.close()
+# collect in-memory instead of temp csv
+collected = []
 
 for FacultyName in os.listdir(file_source): # For each faculty member
-	if FacultyName[0].isalnum(): # gets rid of hidden files generated, allows for only faculty names left
-		print("Service: " +FacultyName)
+	if FacultyName.find(",") > -1 and Path(os.path.join(file_source, FacultyName)).is_dir():
+		print("Service: " + FacultyName,end="")
 		try:
-			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+"Service" +os.sep +file, engine='openpyxl',sheet_name="Data")
+			sheet = pd.read_excel(file_source + os.sep + FacultyName + os.sep + "Service" + os.sep + file, engine='openpyxl', sheet_name="Data")
 			sheet["FacultyName"] = FacultyName
-			sheet.to_csv(open(tempcsv, 'a+'),index=False,header=False)
+			collected.append(sheet)
+			print(" - read " + str(sheet.shape[0]) + " rows")
 		except FileNotFoundError as e:
-			print("Could not read file",FacultyName)
-		
-df = pd.read_csv(tempcsv)
-os.remove(tempcsv)
-excelfile = df.to_excel(file, index=False)
+			print("Could not read file", FacultyName)
+
+if collected:
+	df = pd.concat(collected, ignore_index=True)
+	df.to_excel(file, index=False)
+else:
+	print("No data collected.")
