@@ -10,7 +10,8 @@ from make_cv.stringprotect import abbreviate_name
 def main(argv,FacultyNames,years,private):
 	source = argv[1] # file to read
 	try:
-		df = pd.read_excel(source,sheet_name="Data")
+		#df = pd.read_excel(source,sheet_name="Data")
+		df = pd.read_excel(source)
 	except OSError:
 		print("Could not open/read file: " + source)
 		return(0)

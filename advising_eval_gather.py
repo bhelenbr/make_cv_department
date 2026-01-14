@@ -4,6 +4,7 @@ import os
 import sys
 import pandas as pd
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 if len(sys.argv) < 2:
     print("Usage: advising_eval_gather.py <faculty_root>")
@@ -27,9 +28,8 @@ for FacultyName in os.listdir(file_source):
                 print("Failed reading", path, "—", e)
 
 if collected:
-    out = pd.concat(collected, ignore_index=True)
-    Path(subfolder).mkdir(parents=True, exist_ok=True)
-    out.to_excel(Path(subfolder) / file_name, index=False)
-    print("Wrote:", Path(subfolder) / file_name)
+    out = merge_and_dedup(collected)
+    out.to_excel(file_name, index=False)
+    print("Wrote:", Path(file_name))
 else:
     print("No advising evaluation files found.")

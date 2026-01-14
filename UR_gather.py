@@ -4,6 +4,7 @@ import os
 import sys
 import pandas as pd
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 file = "undergraduate research data.xlsx"
 folder = "Service"
@@ -43,7 +44,7 @@ for faculty_dir in source_path.iterdir(): # For each faculty member
 			print("Could not read file", FacultyName)
 		
 if collected:
-	df = pd.concat(collected, ignore_index=True)
+	df = merge_and_dedup(collected)
 	df.to_excel(file, index=False)
 else:
 	print("No data collected.")

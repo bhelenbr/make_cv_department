@@ -56,7 +56,7 @@ for faculty_dir in faculty_path.iterdir():
 			else:
 				existing_data = pd.DataFrame()
 
-			result = merge_and_dedup(existing_data, toAppend, ignore_cols=[]).sort_values(by=['Year','Degree','Student'],ascending=[True,True,True])
+			result = merge_and_dedup([existing_data, toAppend]).sort_values(by=['Year','Degree','Student'],ascending=[True,True,True])
 			with pd.ExcelWriter(filename) as writer:
 				result.to_excel(writer,sheet_name='Data',index=False)
 			print(f'Appended {result.shape[0] - existing_data.shape[0]}')

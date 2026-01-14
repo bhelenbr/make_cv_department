@@ -75,7 +75,7 @@ for faculty_dir in faculty_path.iterdir():
 				existing_data = pd.DataFrame()
 				notes = pd.DataFrame()
             
-			result = merge_and_dedup(existing_data,toAppend,ignore_cols=[]).sort_values(
+			result = merge_and_dedup([existing_data,toAppend]).sort_values(
 				by=["Calendar Year", "Term", "Description"],
 				ascending=[True, False, True]
 			)

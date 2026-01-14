@@ -7,6 +7,7 @@ import platform
 import shutil
 import openpyxl
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 # Run this script from the Department Data folder
 # This gathers service data from the faculty service data.xlsx file and compiles into a single csv file
@@ -34,7 +35,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 			print("Could not read file", FacultyName)
 
 if collected:
-	df = pd.concat(collected, ignore_index=True)
+	df = merge_and_dedup(collected)
 	df.to_excel(file, index=False)
 else:
 	print("No data collected.")

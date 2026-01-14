@@ -13,15 +13,14 @@ def merge_keep_old_columns(df_new, df_old, cols_from_old=[]):
     return df_merged
         
 
-def merge_and_dedup(df1, df2, ignore_cols, keep="first"):
+def merge_and_dedup(dfs, ignore_cols=None, keep="first"):
     """
-    Merge two DataFrames by stacking rows and drop duplicates,
-    ignoring columns in ignore_cols when determining duplicates.
+    Combine an iterable/list of DataFrames by stacking rows and drop duplicates.
 
     Parameters
     ----------
-    df1, df2 : pandas.DataFrame
-        DataFrames to combine
+    dfs : iterable of pandas.DataFrame
+        Iterable (list/tuple/generator) of DataFrames to combine.
     ignore_cols : list of str
         Columns to ignore when identifying duplicates
     keep : {"first", "last", False}
@@ -31,6 +30,8 @@ def merge_and_dedup(df1, df2, ignore_cols, keep="first"):
     -------
     pandas.DataFrame
     """
+    if ignore_cols is None:
+        ignore_cols = []
     # Filter out empty or all-NA DataFrames before concatenation to avoid
     # pandas FutureWarning about dtype inference changing in future versions.
     def _is_empty_or_all_na(df):
@@ -45,15 +46,20 @@ def merge_and_dedup(df1, df2, ignore_cols, keep="first"):
         except Exception:
             return False
 
-    frames = [df for df in (df1, df2) if not _is_empty_or_all_na(df)]
+    # Build candidate frames from the provided iterable
+    try:
+        candidate_frames = list(dfs)
+    except TypeError:
+        raise TypeError("merge_and_dedup expects an iterable of DataFrames as 'dfs'")
+
+    frames = [df for df in candidate_frames if not _is_empty_or_all_na(df)]
 
     if len(frames) == 0:
         # Return an empty DataFrame with the union of columns from inputs
         cols = pd.Index([])
-        if hasattr(df1, 'columns'):
-            cols = cols.union(df1.columns)
-        if hasattr(df2, 'columns'):
-            cols = cols.union(df2.columns)
+        for cand in candidate_frames:
+            if hasattr(cand, 'columns'):
+                cols = cols.union(cand.columns)
         combined = pd.DataFrame(columns=cols)
     elif len(frames) == 1:
         combined = frames[0].copy().reset_index(drop=True)

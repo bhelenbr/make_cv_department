@@ -12,7 +12,7 @@ def main(argv,years):
 		df = pd.read_excel(source,header=0)
 	except OSError:
 		print("Could not open/read file: " + source)
-		sys.exit()
+		return(pd.DataFrame())
 	
 	today = date.today()
 	year = today.year

@@ -4,6 +4,7 @@ import os
 import sys
 import pandas as pd
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 file = "advisee counts.xlsx"
 folder = "Service"
@@ -33,7 +34,7 @@ for FacultyName in os.listdir(file_source):
             print("Failed reading", path, "—", e)
 
 if collected:
-    df = pd.concat(collected, ignore_index=True)
+    df = merge_and_dedup(collected)
     df.to_excel(file, index=False)
     print("Wrote:", file)
 else:

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 from datetime import date
+import datetime as dt
 
 def main(argv,years):
 	source = argv[1] # file to read
@@ -18,8 +19,13 @@ def main(argv,years):
 	year = today.year
 	begin_year = year - years
 
-	props = props.fillna('')
-	props = props[props['Begin Date'].apply(lambda x: int(x[:4])) >= begin_year]
+	if years > 0:
+		today = dt.date.today()
+		year = today.year
+		begin_year = year - years
+		# Use vectorized access to the year to avoid invalid comparisons
+		mask = props['Submit Date'].dt.year >= begin_year
+		props = props[mask.fillna(False)]
 
 	table = props.pivot_table(values=['Proposal_ID'], index=['FacultyName'], aggfunc={'Proposal_ID': 'count'},observed=False)
 

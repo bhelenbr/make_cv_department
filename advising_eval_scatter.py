@@ -56,7 +56,7 @@ for faculty_dir in faculty_path.iterdir():
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
 				existing_data = pd.read_excel(filename,dtype={'ID': str})
-				result = merge_and_dedup(existing_data, entries, ignore_cols=[]).sort_values(by=['Term','Number'],ascending=[True,True])			
+				result = merge_and_dedup([existing_data, entries]).sort_values(by=['Term','Number'],ascending=[True,True])			
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
 				print(f'Appended {result.shape[0] -existing_data.shape[0]}')

@@ -4,6 +4,7 @@ import os
 import sys
 import pandas as pd
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 if len(sys.argv) < 2:
     print("Usage: grants_gather.py <faculty_root>")
@@ -35,7 +36,7 @@ for FacultyName in os.listdir(file_source):
                 print("Failed reading", path, "—", e)
 
 if collected:
-    out = pd.concat(collected, ignore_index=True)
+    out = merge_and_dedup(collected)
     out.to_excel(file_name, index=False)
     print("Wrote:", file_name)
 else:

@@ -29,7 +29,7 @@ df = pd.read_excel(source)
 df.fillna(value={"Staff": "", "Deposit": ""}, inplace=True)
 df["Deposit"] = (df["Deposit"] == "Deposit").astype(int)
 df["Staff"] = df["Staff"].apply(
-	lambda x: abbreviate_name(x.split("-")[0].strip()) if "-" in x else abbreviate_name(x,first_initial_only=True)
+	lambda x: abbreviate_name(x.split("-")[0].strip(),first_initial_only=True).lower() if "-" in x else abbreviate_name(x,first_initial_only=True).lower()
 )
 df["Year"] = df["Date of Visit"].astype(str).str[:4].astype(int)
 
@@ -68,13 +68,14 @@ for faculty_dir in faculty_path.iterdir():
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
 				existing = pd.read_excel(filename)
-				result = merge_and_dedup(existing, entries, ignore_cols=[]).sort_values(by=["Year"])
+				result = merge_and_dedup([existing, entries]).sort_values(by=["Year"])
+				print(f'Appended {result.shape[0] - existing.shape[0]}')
 			else:
 				result = entries.sort_values(by=["Year"])
+				print(f'Wrote {result.shape[0]} entries')
 
 			with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
 				result.to_excel(writer, index=False)
-			print(f'Appended {result.shape[0] - existing.shape[0]}')
 		else:
 			print('No entries')
 	

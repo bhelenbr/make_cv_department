@@ -7,6 +7,7 @@ import platform
 import shutil
 import openpyxl
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 file = "proposals & grants.xlsx"
 folder = "Proposals & Grants"
@@ -27,7 +28,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 	if FacultyName.find(",") > -1 and Path(os.path.join(file_source, FacultyName)).is_dir():
 		print("SRS: " + FacultyName,end="")
 		try:
-			sheet = pd.read_excel(file_source + os.sep + FacultyName + os.sep + folder + os.sep + file, engine='openpyxl', header=1, sheet_name="Data")
+			sheet = pd.read_excel(file_source + os.sep + FacultyName + os.sep + folder + os.sep + file, engine='openpyxl', sheet_name="Data")
 			sheet["FacultyName"] = FacultyName
 			collected.append(sheet)
 			print(" - read " + str(sheet.shape[0]) + " rows")
@@ -35,7 +36,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 			print("Could not read file", FacultyName)
 
 if collected:
-	df = pd.concat(collected, ignore_index=True)
+	df = merge_and_dedup(collected)
 	df.to_excel(file, index=False)
 else:
 	print("No data collected.")

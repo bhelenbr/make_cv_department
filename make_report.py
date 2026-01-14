@@ -8,34 +8,20 @@ import platform
 import shutil
 import openpyxl
 import argparse
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description='This script creates the annual report and assoicated data')
-parser.add_argument('-y','--years', type=int, help='The number of years of data to use (default is 3)',default='3')
+parser.add_argument('-y','--years', type=int, help='The number of years of data to use (default is 1)',default='1')
 parser.add_argument('-a','--anonymous', action=argparse.BooleanOptionalAction, help='Anonymize salary & teaching/advising evaluations',default=False)
-parser.add_argument('')
+parser.add_argument('faculty_source', help='Path to faculty data folders')
 
 args = parser.parse_args()
 years = args.years
 Anonymous_Flag = args.anonymous
 
 # Run this script from the Department Data folder to create annual report
-
-# Source is faculty folder
-faculty_source = sys.argv[1]
-gathered_source = sys.argv[2]
-if platform.system() == 'Windows':
-	faculty_source = r"S:\departments\Mechanical & Aeronautical Engineering\Faculty"
-	gathered_source = r"S:\departments\Mechanical & Aeronautical Engineering\Confidential Information\Department Data"
-	sys.path.insert(0, r"S:\departments\Mechanical & Aeronautical Engineering\Faculty\_Scripts")
-	sys.path.insert(0, r"S:\departments\Mechanical & Aeronautical Engineering\Confidential Information\Department Data\Scripts")
-	
-	
-else:
-	faculty_source = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
-	gathered_source = r"/Volumes/Mechanical & Aerospace Engineering/Confidential Information/Department Data"
-	sys.path.insert(0, r"/Volumes/Mechanical & Aerospace Engineering/Faculty/_Scripts")
-	sys.path.insert(0, r"/Volumes/Mechanical & Aerospace Engineering/Confidential Information/Department Data/Scripts")
-
+faculty_source = args.faculty_source
+gathered_source = ".."
 
 from make_cv.grants2latex_far import grants2latex_far
 from make_cv.props2latex_far import props2latex_far
@@ -55,9 +41,9 @@ import thesis_plot
 import current_grads_plot
 import service_plot
 import reviewing_plot
-import prospective_plot
+import prospective_plot2
 import teaching_eval_plot
-import teaching_load_plot
+import teaching_load_plot2
 import advising_plot
 import advisee_counts
 
@@ -81,27 +67,27 @@ df = pd.DataFrame();
 
 new_df = srs_plot.main(['srs_plot',gathered_source +os.sep +"Proposals & Grants" +os.sep +'proposals & grants.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = UR_plot.main(['UR_plot',gathered_source +os.sep +"Undergraduate Research" +os.sep +'undergraduate research data.xlsx'],years)
+new_df = UR_plot.main(['UR_plot',gathered_source +os.sep +"Service" +os.sep +'undergraduate research data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
 new_df = pubs_plot.main(['pubs_plot',gathered_source +os.sep +"Scholarship"],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = thesis_plot.main(['thesis_plot',gathered_source +os.sep +"Thesis" +os.sep +'thesis data.xlsx'],years)
+new_df = thesis_plot.main(['thesis_plot',gathered_source +os.sep +"Scholarship" +os.sep +'thesis data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = current_grads_plot.main(['current_grad_plot',gathered_source +os.sep +"Thesis" +os.sep +'current student data.xlsx'])
+new_df = current_grads_plot.main(['current_grad_plot',gathered_source +os.sep +"Scholarship" +os.sep +'current student data.xlsx'])
 df = pd.concat([df, new_df],axis=1)
 new_df = service_plot.main(['service_plot',gathered_source +os.sep +"Service" +os.sep +'service data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = reviewing_plot.main(['reviewing_plot',gathered_source +os.sep +"Reviewing" +os.sep +'reviews data.xlsx'],years)
+new_df = reviewing_plot.main(['reviewing_plot',gathered_source +os.sep +"Service" +os.sep +'reviews data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = prospective_plot.main(['prospective_plot',gathered_source +os.sep +"Prospective Visits" +os.sep +'prospective visits.xlsx'],FacultyNames,years)
+new_df = prospective_plot2.main(['prospective_plot',gathered_source +os.sep +"Service" +os.sep +'prospective visit data.xlsx'],FacultyNames,years)
 df = pd.concat([df, new_df],axis=1)
-new_df = teaching_eval_plot.main(['teaching_eval_plot',gathered_source +os.sep +"Teaching" +os.sep +'Teaching Eval Data.xlsx'],FacultyNames,years,Anonymous_Flag)
+new_df = teaching_eval_plot.main(['teaching_eval_plot',gathered_source +os.sep +"Teaching" +os.sep +'teaching evaluation data.xlsx'],FacultyNames,years,Anonymous_Flag)
 df = pd.concat([df, new_df],axis=1)
-new_df = teaching_load_plot.main(['teaching_load_plot',gathered_source +os.sep +"Teaching" +os.sep +'Teaching Info.xlsx'],FacultyNames,years)
+new_df = teaching_load_plot2.main(['teaching_load_plot',gathered_source +os.sep +"Teaching" +os.sep +'teaching evaluation data.xlsx'],FacultyNames,years)
 df = pd.concat([df, new_df],axis=1)
-new_df = advising_plot.main(['advising_plot',gathered_source +os.sep +"Advising" +os.sep +'Advising Evaluation Data.xlsx'],FacultyNames,years,Anonymous_Flag)
+new_df = advising_plot.main(['advising_plot',gathered_source +os.sep +"Service" +os.sep +'advising evaluation data.xlsx'],FacultyNames,years,Anonymous_Flag)
 df = pd.concat([df, new_df],axis=1)
-new_df = advisee_counts.main(['advisee_counts',gathered_source +os.sep +"Advising" +os.sep +'Advisee Counts.xlsx'],FacultyNames,years)
+new_df = advisee_counts.main(['advisee_counts',gathered_source +os.sep +"Service" +os.sep +'advisee counts.xlsx'],FacultyNames,years)
 df = pd.concat([df, new_df],axis=1)
 df.to_excel('faculty_data.xlsx')
 
@@ -109,7 +95,9 @@ df.to_excel('faculty_data.xlsx')
 fgrants = open('Tables/grants_far.tex', 'a') # file to write
 fprops = open('Tables/props_far.tex', 'a') # file to write
 fur = open('Tables/UR_far.tex', 'a') # file to write
-pubfiles = ["journal_far.tex","conference_far.tex","patent_far.tex","book_far.tex","invited_far.tex","refereed_far.tex"]
+pubfiles = ["journal_far.tex","conference_far.tex","patent_far.tex","book_far.tex","invited_far.tex","refereed_far.tex","arXiv_far.tex"]
+pub_categories = ['Journal','Conference','Patent','Book','Invited','Refereed','arXiv']
+
 fpubs = [open('Tables' +os.sep +name, 'a') for name in pubfiles]
 fthesis = open('Tables/thesis_far.tex', 'a') # file to write
 fpawards = open('Tables/personal_awards_far.tex', 'a') # file to write
@@ -121,7 +109,7 @@ fteaching = open('Tables/teaching_far.tex', 'a') # file to write
 
 br = open('Tables/bibresource.tex','w')
 for FacultyName in os.listdir(faculty_source): # For each faculty member
-	if FacultyName.find(",") > -1 and Path(FacultyName).is_dir():
+	if FacultyName.find(",") > -1 and Path(faculty_source,FacultyName).is_dir():
 		print(FacultyName)
 		headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +FacultyName +'}\n'
 		
@@ -153,11 +141,12 @@ for FacultyName in os.listdir(faculty_source): # For each faculty member
 			
 		# Scholarly Works
 		filename = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'scholarship.bib'
+		nrecords = [0 for counter in range(len(pubfiles))]
 		if os.path.isfile(filename):
 			ppos = [fpubs[counter].tell() for counter in range(len(pubfiles))]
 			for counter in range(len(pubfiles)):
 				fpubs[counter].write(headerstring)
-			nrecords = bib2latex_far(fpubs,years,filename)
+				nrecords[counter] = bib2latex_far(fpubs[counter],filename,[pub_categories[counter]],years=years)
 			for counter in range(len(pubfiles)):
 				if not(nrecords[counter]):
 					fpubs[counter].seek(ppos[counter])

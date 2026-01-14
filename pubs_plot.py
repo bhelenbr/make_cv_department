@@ -13,9 +13,12 @@ def main(argv,years):
 	for name in ['journal','refereed','patent','conference','book','invited']:
 		source = argv[1] +os.sep +name +".xlsx"
 		try:
-			df = pd.read_excel(source,header=0)
+			df = pd.read_excel(source)
 		except OSError:
 			print("Could not open/read file: " + source)
+			continue
+
+		if (df.empty):
 			continue
 
 		today = date.today()

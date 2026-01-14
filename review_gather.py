@@ -7,6 +7,7 @@ import platform
 import shutil
 import openpyxl
 from pathlib import Path
+from merge_df import merge_and_dedup
 
 file = "reviews data.xlsx"
 folder = "Service"
@@ -27,7 +28,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 		try:
 			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+folder +os.sep +file, engine='openpyxl')
 			sheet["FacultyName"] = FacultyName
-			df =  pd.concat([df, sheet])
+			df =  merge_and_dedup([df,sheet])	
 			print(" - read " + str(sheet.shape[0]) + " rows")
 		except FileNotFoundError as e:
 			print("Could not read file",FacultyName)

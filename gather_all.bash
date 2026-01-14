@@ -1,25 +1,21 @@
 #!/bin/bash
 
 # Run this script from the "Department Data" folder
-
 YEAR=$(date "+%Y")
 
 # I assume this is being run in January
 let YEAR=$YEAR-1
 
-echo "Undergraduate Research"
-if [ ! -d "Undergraduate Research" ]; then
-	mkdir "Undergraduate Research"
-	mkdir "Undergraduate Research/Historical"
+# Normalize first argument to an absolute path so relative/local paths
+# still work after this script changes directories.
+ARG=""
+if [ -n "$1" ]; then
+  if command -v realpath >/dev/null 2>&1; then
+    ARG=$(realpath "$1")
+  else
+    ARG=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$1")
+  fi
 fi
-cd "Undergraduate Research"
-if [ ! -d Historical/${YEAR} ]; then
-  mkdir Historical/${YEAR}
-fi
-mv -n "undergraduate research data.xlsx" Historical/${YEAR}
-UR_gather.py "$1"
-cd ..
-
 echo "Service"
 if [ ! -d "Service" ]; then
 	mkdir "Service"
@@ -30,13 +26,17 @@ if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "service data.xlsx" Historical/${YEAR}
-service_gather.py "$1"
 mv -n "advisee counts.xlsx" Historical/${YEAR}
 mv -n "advising evaluation data.xlsx" Historical/${YEAR}
 mv -n "prospective visit data.xlsx" Historical/${YEAR}
-advisee_counts_gather.py "$1"
-advising_eval_gather.py "$1"
-prospective_gather.py "$1"
+mv -n "undergraduate research data.xlsx" Historical/${YEAR}
+mv -n "reviews data.xlsx" Historical/${YEAR}
+service_gather.py "$ARG"
+advisee_counts_gather.py "$ARG"
+advising_eval_gather.py "$ARG"
+prospective_gather.py "$ARG"
+UR_gather.py "$ARG"
+review_gather.py "$ARG"
 cd ..
 
 echo "Awards"
@@ -50,8 +50,8 @@ if [ ! -d Historical/${YEAR} ]; then
 fi
 mv -n "personal awards data.xlsx" Historical/${YEAR}
 mv -n "student awards data.xlsx" Historical/${YEAR}
-personal_awards_gather.py "$1"
-student_awards_gather.py "$1"
+personal_awards_gather.py "$ARG"
+student_awards_gather.py "$ARG"
 cd ..
 
 echo "Proposals & Grants"
@@ -64,11 +64,11 @@ if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "proposals & grants.xlsx" Historical/${YEAR}
-srs_gather.py "$1"
+srs_gather.py "$ARG"
 mv -n "expenditures.xlsx" Historical/${YEAR}
 mv -n "grants.xlsx" Historical/${YEAR}
-expenditures_gather.py "$1"
-grants_gather.py "$1"
+expenditures_gather.py "$ARG"
+grants_gather.py "$ARG"
 cd ..
 
 echo "Scholarship"
@@ -82,45 +82,21 @@ if [ ! -d Historical/${YEAR} ]; then
 fi
 mv -n *.xlsx Historical/${YEAR}
 echo "Journal"
-pubs_gather.py "$1" journal 
+pubs_gather.py "$ARG" journal 
 echo "Invited"
-pubs_gather.py "$1" invited
+pubs_gather.py "$ARG" invited
 echo "Patent"
-pubs_gather.py "$1" patent
+pubs_gather.py "$ARG" patent
 echo "Refereed"
-pubs_gather.py "$1" refereed
+pubs_gather.py "$ARG" refereed
 echo "Conference"
-pubs_gather.py "$1" conference
+pubs_gather.py "$ARG" conference
 echo "Book"
-pubs_gather.py "$1" book
-cd ..
-
-echo "Reviewing"
-if [ ! -d Reviewing ]; then
-  mkdir Reviewing
-  mkdir Reviewing/Historical
-fi
-cd Reviewing
-if [ ! -d Historical/${YEAR} ]; then
-  mkdir Historical/${YEAR}
-fi
-mv -n "reviews data.xlsx" Historical/${YEAR}
-review_gather.py "$1"
-cd ..
-
-echo "Thesis"
-if [ ! -d Thesis ]; then
-  mkdir Thesis
-  mkdir Thesis/Historical
-fi
-cd Thesis
-if [ ! -d Historical/${YEAR} ]; then
-  mkdir Historical/${YEAR}
-fi
+pubs_gather.py "$ARG" book
 mv -n "thesis data.xlsx" Historical/${YEAR}
 mv -n "current student data.xlsx" Historical/${YEAR}
-thesis_gather.py "$1"
-current_grads_gather.py "$1"
+thesis_gather.py "$ARG"
+current_grads_gather.py "$ARG"
 cd ..
 
 echo "Teaching"
@@ -133,6 +109,6 @@ if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "teaching evaluation data.xlsx" Historical/${YEAR}
-teaching_eval_gather.py "$1"
+teaching_eval_gather.py "$ARG"
 cd ..
 cd ..

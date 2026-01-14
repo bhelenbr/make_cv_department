@@ -64,7 +64,7 @@ for faculty_dir in faculty_path.iterdir():
 			if destination.is_file():
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
-				result = merge_and_dedup(existing_data, entries, ignore_cols=[])
+				result = merge_and_dedup([existing_data, entries])
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					result.to_excel(writer, sheet_name="Data", index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]} entries')
