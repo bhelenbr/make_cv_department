@@ -12,4 +12,5 @@ for file in *; do
 	replace_line.sh "${file}/make_cv/FAR/make_cv.cfg" "${file}/make_cv/FAR_docx/make_cv.cfg" "googleid =";
 	replace_line.sh "${file}/make_cv/FAR/make_cv.cfg" "${file}/make_cv/FAR_docx/make_cv.cfg" "orcid =";
 	replace_line.sh "${file}/make_cv/FAR_docx/make_cv.cfg" "${file}/make_cv/Collaborators/make_cv.cfg" "gradthesesfile =";
+	replace_line.sh "${file}/make_cv/FAR_docx/make_cv.cfg" "${file}/make_cv/Collaborators/make_cv.cfg" "grantsfile =";
 done

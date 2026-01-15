@@ -18,14 +18,15 @@ import shutil
 EXCEL_FILE = sys.argv[1]
 file_destination = sys.argv[2]
 
+
 FAR_DRAFT_PATH = "make_cv" +os.sep +"FAR_docx"
 NSF_COA_PATH = "make_cv" +os.sep +"Collaborators" +os.sep +"collaborators.xlsx"
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 
-AUTH_EMAIL = ""
-AUTH_PASSWORD = ""  # Must be valid App Password
+AUTH_EMAIL = sys.argv[3]
+AUTH_PASSWORD = sys.argv[4]
 
 DELEGATED_EMAIL = "far@clarkson.edu"
 DELEGATED_NAME = "FAR Team"
@@ -137,52 +138,52 @@ for faculty_dir in base_path.iterdir():
     except Exception:
         print(f"Warning: could not copy draft for {FacultyName}")
 
-        msg = EmailMessage()
-        msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
-        msg["To"] = recipient
-        msg["Cc"] = supervisor
-        msg["Reply-To"] = REPLY_TO_EMAIL
-        msg["Subject"] = SUBJECT
+    msg = EmailMessage()
+    msg["From"] = f"{DELEGATED_NAME} <{DELEGATED_EMAIL}>"
+    msg["To"] = recipient
+    msg["Cc"] = supervisor
+    msg["Reply-To"] = REPLY_TO_EMAIL
+    msg["Subject"] = SUBJECT
 
-        print(recipient)
-        print(supervisor)
-        
-        html_body = HTML_BODY_TEMPLATE.format(name=greeting_name)
-        msg.set_content(html_body, subtype="html")
+    print(recipient)
+    print(supervisor)
+    
+    html_body = HTML_BODY_TEMPLATE.format(name=greeting_name)
+    msg.set_content(html_body, subtype="html")
 
-        # -----------------------------
-        # Attachments
-        # -----------------------------
-        
-        attachments = [Path(FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +FacultyName +" FAR.docx"),  Path(FacultyName +os.sep +NSF_COA_PATH)]
-        
-        for att in attachments:
-            if not att.exists():
-                print(f"WARNING: Missing attachment → {att}")
-                
-        # Attach files
-        for att in attachments:
-            if att.exists():
-                ext = att.suffix.lower()
-                if ext == '.pdf':
-                    main, sub = "application", "pdf"
-                elif ext in ['.docx', '.doc']:
-                    main, sub = "application", "vnd.openxmlformats-officedocument.wordprocessingml.document"
-                elif ext == '.xlsx':
-                    main, sub = "application", "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                else:
-                    main, sub = "application", "octet-stream"
+    # -----------------------------
+    # Attachments
+    # -----------------------------
+    
+    attachments = [Path(base_path,FacultyName +os.sep +FAR_DRAFT_PATH +os.sep +FacultyName +" FAR.docx"),  Path(base_path,FacultyName +os.sep +NSF_COA_PATH)]
+    
+    for att in attachments:
+        if not att.exists():
+            print(f"WARNING: Missing attachment → {att}")
+            
+    # Attach files
+    for att in attachments:
+        if att.exists():
+            ext = att.suffix.lower()
+            if ext == '.pdf':
+                main, sub = "application", "pdf"
+            elif ext in ['.docx', '.doc']:
+                main, sub = "application", "vnd.openxmlformats-officedocument.wordprocessingml.document"
+            elif ext == '.xlsx':
+                main, sub = "application", "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            else:
+                main, sub = "application", "octet-stream"
 
-                with open(att, "rb") as f:
-                    msg.add_attachment(f.read(), maintype=main, subtype=sub, filename=att.name)
+            with open(att, "rb") as f:
+                msg.add_attachment(f.read(), maintype=main, subtype=sub, filename=att.name)
 
-        try:
-            server.send_message(msg)
-            sent += 1
-            time.sleep(2)  # Rate limit protection
-        except Exception as e:
-            print('Uh-oh' +FacultyName)
-            skipped += 1
+    try:
+        server.send_message(msg)
+        sent += 1
+        time.sleep(2)  # Rate limit protection
+    except Exception as e:
+        print('Uh-oh' +FacultyName)
+        skipped += 1
 
 # -----------------------------
 # Summary
