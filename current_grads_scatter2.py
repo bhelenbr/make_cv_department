@@ -8,7 +8,7 @@ import xlsxwriter
 from datetime import date
 from pathlib import Path
 
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -62,13 +62,8 @@ for faculty_dir in faculty_path.iterdir():
 			entries = entries.drop(columns=["Last","First Name","Acad Plan","Advisor ID"])
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
 			
-			# ensure parent and backup
-			# ensure parent and backup
-			filename = faculty_dir / destination
-			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
 
+			filename = faculty_dir / destination
 			if Path(filename).is_file():
 				copy_with_timestamp(filename, str(backup_path))
 			with pd.ExcelWriter(filename,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:

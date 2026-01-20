@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 from make_cv.stringprotect import abbreviate_name
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 
@@ -110,12 +110,7 @@ for faculty_dir in faculty_path.iterdir():
 
 			service_dir = faculty_dir / "Service"           
 			filename = service_dir / "undergraduate research data.xlsx"
-			
-			# ensure parent and backup
-			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
-			
+
 			# ---------------- Read existing file ----------------
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))

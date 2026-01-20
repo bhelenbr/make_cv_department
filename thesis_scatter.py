@@ -5,7 +5,7 @@ import pandas as pd
 import argparse
 from pathlib import Path
 
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 parser = argparse.ArgumentParser(description='This script scatters the thesis data to the faculty thesis files')
@@ -43,12 +43,6 @@ for faculty_dir in faculty_path.iterdir():
 			toAppend = entries.iloc[:,0:7]
             
 			filename = faculty_dir / destination
-
-			# ensure parent and backup
-			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
-
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
 				excelFile = pd.read_excel(filename,sheet_name='Data')

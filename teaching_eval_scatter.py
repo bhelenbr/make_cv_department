@@ -10,7 +10,7 @@ import platform
 import sys
 from pathlib import Path
 
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 facultyFolder = sys.argv[2]
@@ -55,12 +55,8 @@ for faculty_dir in faculty_path.iterdir():
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		if entries.shape[0] > 0:
 			destination = faculty_dir / "Teaching" / "teaching evaluation data.xlsx"
-			destination.parent.mkdir(parents=True, exist_ok=True)
 
-			# prepare backup dir path and ensure it exists
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
-
+			backup_path = faculty_dir / backup_dir
 			if destination.is_file():
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")

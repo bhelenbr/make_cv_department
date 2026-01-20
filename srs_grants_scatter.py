@@ -13,7 +13,7 @@ from os.path import exists
 from pathlib import Path
 
 from make_cv.stringprotect import abbreviate_name
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_keep_old_columns
 
 
@@ -76,11 +76,6 @@ for faculty_dir in faculty_path.iterdir():
         
 		print(f"Adding grants to {FacultyName}: ", end ="")
 		destination = faculty_dir / subfolder / file_name
-
-		# ensure parent and backup dirs
-		destination.parent.mkdir(parents=True, exist_ok=True)
-		backup_path = faculty_dir / Path(backup_dir)
-		backup_path.mkdir(parents=True, exist_ok=True)
 
 		if destination.is_file():
 			copy_with_timestamp(destination, str(backup_path))

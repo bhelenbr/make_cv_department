@@ -12,7 +12,7 @@ from pathlib import Path
 import openpyxl
 
 from make_cv.stringprotect import abbreviate_name
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 import sys
@@ -60,11 +60,6 @@ for faculty_dir in faculty_path.iterdir():
 		if entries.shape[0] > 0:
 
 			filename = faculty_dir / "Service" / "prospective visit data.xlsx"
-
-			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
-
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
 				existing = pd.read_excel(filename)

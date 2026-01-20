@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import date
 
 from make_cv.stringprotect import abbreviate_name_list
-from copy_with_timestamp import copy_with_timestamp
+from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 source = sys.argv[1]
@@ -49,11 +49,6 @@ for faculty_dir in faculty_path.iterdir():
 		if entries.shape[0] > 0:
 			toAppend = entries[["Advisor Name","Count Distinct Name","YEAR"]]
 			filename = faculty_dir / destination
-
-			# ensure parent and backup
-			filename.parent.mkdir(parents=True, exist_ok=True)
-			backup_path = faculty_dir / Path(backup_dir)
-			backup_path.mkdir(parents=True, exist_ok=True)
 
 			if filename.is_file():
 				copy_with_timestamp(filename, str(backup_path))
