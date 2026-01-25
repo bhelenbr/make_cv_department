@@ -44,6 +44,7 @@ for faculty_dir in faculty_path.iterdir():
             
 			filename = faculty_dir / destination
 			if filename.is_file():
+				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				excelFile = pd.read_excel(filename,sheet_name='Data')
 				existing_data = excelFile

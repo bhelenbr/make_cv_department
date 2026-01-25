@@ -56,8 +56,8 @@ for faculty_dir in faculty_path.iterdir():
 		if entries.shape[0] > 0:
 			destination = faculty_dir / "Teaching" / "teaching evaluation data.xlsx"
 
-			backup_path = faculty_dir / backup_dir
 			if destination.is_file():
+				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
 				result = merge_and_dedup([existing_data, entries])

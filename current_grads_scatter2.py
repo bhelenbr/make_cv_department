@@ -65,6 +65,7 @@ for faculty_dir in faculty_path.iterdir():
 
 			filename = faculty_dir / destination
 			if Path(filename).is_file():
+				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 			with pd.ExcelWriter(filename,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)

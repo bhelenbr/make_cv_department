@@ -49,6 +49,7 @@ for faculty_dir in faculty_path.iterdir():
 			filename = faculty_dir / "Service" / "advising evaluation data.xlsx"
 
 			if filename.is_file():
+				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				existing_data = pd.read_excel(filename,dtype={'ID': str})
 				result = merge_and_dedup([existing_data, entries]).sort_values(by=['Term','Number'],ascending=[True,True])			

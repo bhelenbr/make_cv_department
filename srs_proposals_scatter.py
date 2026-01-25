@@ -68,6 +68,7 @@ for faculty_dir in faculty_path.iterdir():
 		destination = faculty_dir / subfolder / file_name
 
 		if destination.is_file():
+			backup_path = faculty_dir / backup_dir
 			copy_with_timestamp(destination, str(backup_path))
 			excelFile = pd.read_excel(destination, sheet_name=None,dtype={'Proposal_ID': str})
 			df_old = excelFile.get("Data", pd.DataFrame())

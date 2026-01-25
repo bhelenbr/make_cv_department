@@ -39,7 +39,6 @@ for faculty_dir in faculty_path.iterdir():
 		if len(entries) == 1:
 			employee_id = int(entries["EMPLID"].iloc[0])
 			output_path = faculty_dir / output_filename
-			output_path.parent.mkdir(parents=True, exist_ok=True)
 			with open(output_path, "w") as f:
 				f.write(f"{employee_id}")
 		else:

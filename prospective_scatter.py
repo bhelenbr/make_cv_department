@@ -61,6 +61,7 @@ for faculty_dir in faculty_path.iterdir():
 
 			filename = faculty_dir / "Service" / "prospective visit data.xlsx"
 			if filename.is_file():
+				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				existing = pd.read_excel(filename)
 				result = merge_and_dedup([existing, entries]).sort_values(by=["Year"])

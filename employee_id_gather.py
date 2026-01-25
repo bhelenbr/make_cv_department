@@ -27,7 +27,6 @@ for FacultyName in os.listdir(file_source):
 
 if collected:
     df = pd.DataFrame(collected)
-    out_file.parent.mkdir(parents=True, exist_ok=True)
     df.to_excel(out_file, index=False)
     print("Wrote:", out_file)
 else:

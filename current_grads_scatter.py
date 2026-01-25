@@ -46,6 +46,5 @@ for faculty_dir in faculty_path.iterdir():
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
 			print(entries)
 			out_path = faculty_dir / destination
-			out_path.parent.mkdir(parents=True, exist_ok=True)
 			with pd.ExcelWriter(out_path,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)
