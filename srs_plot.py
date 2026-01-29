@@ -28,7 +28,7 @@ def main(argv,years):
 		props = props[mask.fillna(False)]
 
 	table = props.pivot_table(values=['Proposal_ID'], index=['FacultyName'], aggfunc={'Proposal_ID': 'count'},observed=False)
-
+	print(table)
 	table.columns=['PCount']
 	
 	new_df = table

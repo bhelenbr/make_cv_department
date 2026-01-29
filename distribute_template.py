@@ -9,6 +9,7 @@ import os
 import shutil
 import sys
 import platform
+from pathlib import Path
 
 # Destination is faculty folder
 if platform.system() == 'Windows':

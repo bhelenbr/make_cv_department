@@ -17,7 +17,7 @@ from merge_df import merge_and_dedup
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
-emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 destination = Path("Service") / "undergraduate research data.xlsx"
 backup_dir = Path("make_cv") / "Backups"
 
@@ -45,16 +45,16 @@ for faculty_dir in faculty_path.iterdir():
 	# only consider directories named like 'Last, First'
 	if FacultyName.find(",") > -1:
 		print(f'Adding undergraduate research classes for {FacultyName} ',end='')
-		personal_folder = faculty_dir / emplid_file
-		if not personal_folder.is_file():
-			print(' (missing employee_id)')
+		personal_file = faculty_dir / emplid_file
+		if not personal_file.is_file():
+			print(' (missing personal_data.txt)')
 			continue
-		with open(personal_folder, "r") as f:
-			try:
-				employee_id = int(f.read().strip())
-			except Exception:
-				print(' (invalid employee_id)')
-				continue
+		try:
+			personal_file_text = personal_file.read_text() 
+			employee_id = int(re.search(r'employeeid[ \t]*=[ \t]*(\d+)', personal_file_text, re.IGNORECASE).group(1))
+		except Exception:
+			print(' (invalid employee_id)')
+			continue
 
 		# Get entries for this faculty
 		entries = df.loc[df["Advisor ID"].astype(int) == employee_id]

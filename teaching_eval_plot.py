@@ -32,8 +32,11 @@ def main(argv,FacultyNames,years,private):
 		df = df[df['INSTR_NA'].isin(Abbrev)]
 		df['INSTR_NA'] = df['INSTR_NA'].apply(lambda x: FacultyLookup[x])	
 	
+	print(FacultyNames)
+	print(df)
 	table = df.pivot_table(index=['INSTR_NA'],columns=['question'],aggfunc={'enrollment': 'sum','Weighted Average': 'sum', 'count_evals':'sum'})		
 	table = table.fillna(0)
+	print(table.columns)
 
 	table['q19av'] = np.divide(table[('Weighted Average',19)],table[('count_evals',19)])
 	table['q20av'] = np.divide(table[('Weighted Average',20)],table[('count_evals',20)])

@@ -3,6 +3,6 @@
 for file in [A-Z]?*; do
 	echo "$file" 
 	cd "$file/CV"
-	make_web
+	make_web "$@"
 	cd ../..
 done

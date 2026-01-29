@@ -31,7 +31,7 @@ from make_cv.thesis2latex_far import thesis2latex_far
 from make_cv.personal_awards2latex_far import personal_awards2latex_far
 from make_cv.student_awards2latex_far import student_awards2latex_far
 from make_cv.service2latex_far import service2latex_far
-from make_cv.publons2latex_far import publons2latex_far
+from make_cv.reviews2latex_far import reviews2latex_far
 from make_cv.teaching2latex_far import teaching2latex_far
 
 import srs_plot
@@ -48,6 +48,9 @@ import advising_plot
 import advisee_counts
 
 
+dest_dir = Path("Tables")
+  # Ensure destination directory exists
+dest_dir.mkdir(parents=False, exist_ok=True)
 
 try:
 	files = glob.glob('Tables/*')
@@ -194,7 +197,7 @@ for FacultyName in os.listdir(faculty_source): # For each faculty member
 		filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'reviews data.xlsx'
 		pos = freviews.tell()
 		freviews.write(headerstring)
-		nrows = publons2latex_far(freviews,years,filename)	
+		nrows = reviews2latex_far(freviews,years,filename)	
 		if not(nrows):
 			freviews.seek(pos)
 			freviews.truncate()

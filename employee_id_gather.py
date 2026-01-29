@@ -16,7 +16,7 @@ collected = []
 
 for FacultyName in os.listdir(file_source):
     if FacultyName.find(",") > -1 and Path(os.path.join(file_source, FacultyName)).is_dir():
-        path = Path(file_source) / FacultyName / "make_cv" / "PersonalData" / "employee_id.txt"
+        path = Path(file_source) / FacultyName / "make_cv" / "PersonalData" / "personal_data.txt"
         if path.is_file():
             try:
                 with open(path, "r") as f:

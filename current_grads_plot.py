@@ -16,8 +16,9 @@ def main(argv):
 	
 	df['Current Program'] = df['Current Program'].apply(lambda x: x[(x.find("-")+1):] if isinstance(x, str) else "MS")
 	table = df.pivot_table(values=['Student Name'], index=['FacultyName'], columns=['Current Program'], aggfunc={'Student Name': 'count'},observed=False,fill_value=0)
-	table.columns=['MS','PhD']
-	#print(table)
+	
+	# Simplify the multindex column names
+	table = table['Student Name']
 	
 
 	x = np.arange(table.shape[0])  # the label locations
@@ -26,7 +27,7 @@ def main(argv):
 
 	fig, ax = plt.subplots(layout='constrained')
 
-	for program in ["MS","PhD"]:
+	for program in table.columns:
 		offset = width * multiplier
 		rects = ax.bar(x + offset, table[program], width, label=program)
 		#ax.bar_label(rects, padding=3)
@@ -40,7 +41,7 @@ def main(argv):
 	plt.savefig('Tables/graduate_advisees.png',bbox_inches='tight',pad_inches=1)
 	plt.close()
 	
-	table.columns=['MS Advisees','PhD Advisees']
+	#table.columns=['MS Advisees','PhD Advisees']
 	return(table)
 	
 if __name__ == "__main__":

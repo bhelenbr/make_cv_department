@@ -5,7 +5,11 @@ import pandas as pd
 import numpy as np
 import datetime
 import xlsxwriter
+import re
+from datetime import date
 from pathlib import Path
+
+from make_cv.copy_with_timestamp import copy_with_timestamp
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -14,16 +18,16 @@ pd.options.mode.chained_assignment = None  # default='warn'
 # Python code to scatter current student data
 # First argument is file to scatter
 
-# Destination is faculty folder
-if platform.system() == 'Windows':
-	file_destination = r"S:\departments\Mechanical & Aerospace Engineering\Faculty"
-else:
-	file_destination = r"/Volumes/Mechanical & Aerospace Engineering/Faculty"
-
 source = sys.argv[1]
-students = pd.read_excel(source,sheet_name='Current Students')
-students.drop(students.columns[7:], axis=1, inplace=True)
-students = students.fillna("")
+file_destination = sys.argv[2]
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
+backup_dir = Path("make_cv") / "Backups"
+
+df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
+df = df[df["Career"]=="GRAD"]
+
+df.drop(columns=['ID','Email','Career','Advisor','Email.1'], axis=1, inplace=True)
+df = df.fillna("")
 destination = "Scholarship" +os.sep +"current student data.xlsx"
 faculty_path = Path(file_destination)
 if not faculty_path.is_dir():
@@ -35,16 +39,36 @@ for faculty_dir in faculty_path.iterdir():
 		continue
 	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
-		lastname = FacultyName.lower()[0:FacultyName.find(",")]
-		entries=students[students["Advisor"].apply(lambda x: x.lower().find(lastname) != -1)]
+		print(f'Adding graduate advisees for {FacultyName}: ', end="")
+
+		# Get employee id
+		personal_file = faculty_dir / emplid_file
+		if not personal_file.is_file():
+			print(' (missing personal_data.txt)')
+			continue
+		try:
+			personal_file_text = personal_file.read_text() 
+			employee_id = int(re.search(r'employeeid[ \t]*=[ \t]*(\d+)', personal_file_text, re.IGNORECASE).group(1))
+		except Exception:
+			print(' (invalid employee_id)')
+			continue
+
+		# Get entries for this faculty
+		entries = df.loc[df['Advisor ID'].astype(int) == employee_id]
 		if entries.shape[0] > 0:
-			print(FacultyName)
-			entries["Student Name"] = entries["Student Name"].apply(lambda x: x[0:x.find("(")])
-			entries["Start Date"] = np.where(entries['PhD Start Date'].apply(lambda x: False if pd.isnull(x) else True), entries['PhD Start Date'], entries['MS Start Date'])
-			entries["Start Date"] = pd.to_datetime(entries["Start Date"])
-			entries.drop(columns=['Advisor', 'Initial Program','MS Start Date', 'MS Finish Date', 'PhD Start Date'],inplace=True)
+			entries["Student Name"] = entries["Last"] + ", " + entries["First Name"]
+			entries["Current Program"] = entries["Acad Plan"]
+			entries["Start Date"] = pd.to_datetime(str(date.today()))
+			entries = entries.drop(columns=["Last","First Name","Acad Plan","Advisor ID"])
 			entries.sort_values(by=['Current Program','Start Date'],inplace=True)
-			print(entries)
-			out_path = faculty_dir / destination
-			with pd.ExcelWriter(out_path,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
+			
+
+			filename = faculty_dir / destination
+			if Path(filename).is_file():
+				backup_path = faculty_dir / backup_dir
+				copy_with_timestamp(filename, str(backup_path))
+			with pd.ExcelWriter(filename,date_format='YYYY-MM-DD', datetime_format='YY-MM-DD') as writer:
 				entries.to_excel(writer,sheet_name='Data',index=False)
+			print(f'{entries.shape[0]} entries')
+		else:
+			print('No entries')

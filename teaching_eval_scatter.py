@@ -8,6 +8,7 @@ import pandas as pd
 import os
 import platform
 import sys
+import re
 from pathlib import Path
 
 from make_cv.copy_with_timestamp import copy_with_timestamp
@@ -15,7 +16,7 @@ from merge_df import merge_and_dedup
 
 facultyFolder = sys.argv[2]
 source = sys.argv[1]
-emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 backup_dir = Path("make_cv") / "Backups"
 
 df = pd.read_excel(source, skiprows=1)
@@ -40,16 +41,16 @@ for faculty_dir in faculty_path.iterdir():
 	# only consider directories named like 'Last, First'
 	if FacultyName.find(",") > -1:
 		print(f'Updating teaching evaluations for {FacultyName} ',end='')
-		personal_folder = faculty_dir / emplid_file
-		if not personal_folder.is_file():
-			print(' (missing employee_id)')
+		personal_file = faculty_dir / emplid_file
+		if not personal_file.is_file():
+			print(' (missing personal_data.txt)')
 			continue
-		with open(personal_folder, "r") as f:
-			try:
-				employee_id = int(f.read().strip())
-			except Exception:
-				print(' (invalid employee_id)')
-				continue
+		try:
+			personal_file_text = personal_file.read_text() 
+			employee_id = int(re.search(r'employeeid[ \t]*=[ \t]*(\d+)', personal_file_text, re.IGNORECASE).group(1))
+		except Exception:
+			print(' (invalid employee_id)')
+			continue
             
 		# Get entries for this faculty
 		entries=df.loc[df["ID"].astype(int) == employee_id]

@@ -9,6 +9,8 @@ import pandas as pd
 import os
 import sys
 import platform
+import re
+
 from os.path import exists
 from pathlib import Path
 
@@ -19,7 +21,7 @@ from merge_df import merge_keep_old_columns
 
 source = sys.argv[1]
 faculty_folder = sys.argv[2]
-emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 backup_dir = "make_cv/Backups"
 subfolder = "Proposals & Grants"
 file_name = "grants.xlsx"
@@ -57,16 +59,18 @@ for faculty_dir in faculty_path.iterdir():
 	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
 		# Get employee id
-		personal_folder = faculty_dir / emplid_file
-		if not personal_folder.is_file():
-			print(f"Skipping {FacultyName} (missing employee_id)")
+		personal_file = faculty_dir / emplid_file
+		if not personal_file.is_file():
+			print(f"Skipping {FacultyName} (missing personal_data.txt)")
 			continue
-		with open(personal_folder, "r") as f:
-			try:
-				employee_id = int(f.read().strip())
-			except Exception:
-				print(f"Skipping {FacultyName} (invalid employee_id)")
-				continue
+		try:
+			personal_file_text = personal_file.read_text() 
+			employee_id = int(re.search(r'employeeid[ \t]*=[ \t]*(\d+)', personal_file_text, re.IGNORECASE).group(1))
+		except Exception:
+			print(' (invalid employee_id)')
+			continue
+
+		# Get entries for this faculty
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		entries = entries.drop(columns = ["ID"])
 		idx = entries.groupby("Proposal_ID")["Budget Period"].idxmax()

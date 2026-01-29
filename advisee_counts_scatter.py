@@ -16,7 +16,7 @@ facultyFolder = sys.argv[2]
 df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
 destination = Path("Service") / "advisee counts.xlsx"
 backup_dir = "make_cv/Backups"
-emplid_file = Path("make_cv") / "PersonalData" / "employee_id.txt"
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 
 today = date.today()
 year = today.year
@@ -33,16 +33,16 @@ for faculty_dir in faculty_path.iterdir():
 	FacultyName = faculty_dir.name
 	if FacultyName.find(",") > -1:
 		print(f'Adding Advisor Counts for {FacultyName} ',end='')
-		personal_folder = faculty_dir / emplid_file
-		if not personal_folder.is_file():
-			print(' (missing employee_id)')
+		personal_file = faculty_dir / emplid_file
+		if not personal_file.is_file():
+			print(' (missing personal_data.txt)')
 			continue
-		with open(personal_folder, "r") as f:
-			try:
-				employee_id = int(f.read().strip())
-			except Exception:
-				print(' (invalid employee_id)')
-				continue
+		try:
+			personal_file_text = personal_file.read_text() 
+			employee_id = int(re.search(r'employeeid[ \t]*=[ \t]*(\d+)', personal_file_text, re.IGNORECASE).group(1))
+		except Exception:
+			print(' (invalid employee_id)')
+			continue
 
 		# Get entries for this faculty
 		entries=df.loc[df["ID"].astype(int) == employee_id]
