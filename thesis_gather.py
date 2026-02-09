@@ -30,7 +30,7 @@ for FacultyName in os.listdir(file_source): # For each faculty member
 		try:
 			sheet = pd.read_excel(file_source + os.sep + FacultyName + os.sep + folder + os.sep + file, engine='openpyxl', sheet_name="Data")
 			sheet["FacultyName"] = FacultyName
-			collected.append(sheet[["Student", "Start Date", "Year", "Degree", "Advisor", "Title", "Comments", "FacultyName"]])
+			collected.append(sheet[["Student", "Year", "Degree", "Title", "FacultyName"]])
 			print(" - read " + str(sheet.shape[0]) + " rows")	
 		except FileNotFoundError as e:
 			print("Could not read file", FacultyName)

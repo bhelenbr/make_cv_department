@@ -6,44 +6,47 @@ import pandas as pd
 import sys
 from datetime import date
 
+# "Year	Visits	Deposits	FacultyName"
+
 def main(argv,FacultyNames,years):
 	source = argv[1] # file to read
 	try:
 		df = pd.read_excel(source,header=0)
 	except OSError:
 		print("Could not open/read file: " + source)
-		sys.exit()
+		return(pd.DataFrame())
 	
 	today = date.today()
 	year = today.year
 	begin_year = year - years
 	
-	df = df[(df['Date'].apply(lambda x: x.year) >= begin_year)]
-	df.columns = ['Date','Time','StudentName','Area','FacultyName','Place','Notes']
-	df.fillna(value={"FacultyName": "Professor No-one"},inplace=True)
-	df['FacultyName'] = df['FacultyName'].apply(lambda x: x[(x.find(' ')+1):].strip())
+	df = df[df['Year'] >= begin_year]
+	if df.empty:
+		print("No prospective student visits or deposits found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
 	
+	table = df.pivot_table(index=['FacultyName'], aggfunc={'Visits': 'sum','Deposits':'sum'})
 	
-	LastNames = [x[:x.find(',')] for x in FacultyNames]
-	FacultyLookup = dict(zip(LastNames, FacultyNames))
+	x = np.arange(table.shape[0])  # the label locations
+	width = 0.25  # the width of the bars
+	multiplier = 0
 
-	# Filter out to only department faculty
-	if (len(FacultyNames) > 0):
-		df = df[df['FacultyName'].isin(LastNames)]
-		df['FacultyName'] = df['FacultyName'].apply(lambda x: FacultyLookup[x])
-	
-	table = df.pivot_table(index=['FacultyName'], aggfunc={'StudentName': 'count'})
-	table.columns=['Prosp. Visits']
- 
-	# creating the bar plot
-	fig = plt.figure(figsize = (10, 5))
-	plt.bar(table.index, table['Prosp. Visits'], color ='blue',
-			width = 0.4)
+	fig, ax = plt.subplots(layout='constrained')
+
+	for program in ["Visits","Deposits"]:
+		offset = width * multiplier
+		rects = ax.bar(x + offset, table[program], width, label=program)
+		#ax.bar_label(rects, padding=3)
+		multiplier += 1
+
+	# Add some text for labels, title and custom x-axis tick labels, etc.
+	ax.set_ylabel('Prospective Visits and Deposits')
+	ax.set_xticks(x + width, table.index)
+	ax.legend(loc='upper left', ncols=2)
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
-	plt.xlabel("Faculty")
-	plt.ylabel("Student Visits")
 	plt.savefig('Tables/visits.png',bbox_inches='tight',pad_inches=1)
 	plt.close()
+	
 	
 	return(table)
 

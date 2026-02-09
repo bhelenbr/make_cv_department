@@ -21,7 +21,7 @@ emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 destination = Path("Service") / "undergraduate research data.xlsx"
 backup_dir = Path("make_cv") / "Backups"
 
-df = pd.read_excel(source, skiprows=1, dtype={'Advisor ID': str})
+df = pd.read_excel(source, skiprows=1, dtype={'Advisor ID': str}, engine="xlrd")
 df.columns = [c.strip() for c in df.columns]
 classnum = df["Class"].apply(lambda x: int(str(x)[-3:]))
 df = df[classnum < 499]

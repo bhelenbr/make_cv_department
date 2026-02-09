@@ -13,7 +13,7 @@ from merge_df import merge_and_dedup
 
 source = sys.argv[1]
 facultyFolder = sys.argv[2]
-df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
+df = pd.read_excel(source,skiprows=1,dtype={'ID': str}, engine="xlrd")
 destination = Path("Service") / "advisee counts.xlsx"
 backup_dir = "make_cv/Backups"
 emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"

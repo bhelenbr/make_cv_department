@@ -10,10 +10,10 @@ import datetime as dt
 def main(argv,years):
 	source = argv[1] # file to read
 	try:
-		props = pd.read_excel(source,header=0)
+		props = pd.read_excel(source,header=0,dtype={'Submit Date': 'datetime64[ns]'})
 	except OSError:
 		print("Could not open/read file: " + source)
-		sys.exit()
+		return(pd.DataFrame())
 	
 	today = date.today()
 	year = today.year
@@ -27,8 +27,11 @@ def main(argv,years):
 		mask = props['Submit Date'].dt.year >= begin_year
 		props = props[mask.fillna(False)]
 
+	if props.empty:
+		print("No proposals found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
+	
 	table = props.pivot_table(values=['Proposal_ID'], index=['FacultyName'], aggfunc={'Proposal_ID': 'count'},observed=False)
-	print(table)
 	table.columns=['PCount']
 	
 	new_df = table
@@ -56,35 +59,6 @@ def main(argv,years):
 	plt.xlabel("Faculty")
 	plt.ylabel("Proposal Amount Allocation")
 	plt.savefig('Tables/proposal_amt.png',bbox_inches='tight',pad_inches=1)
-	plt.close()
-
-	props = props[props['Funded?'].str.match('Y')]
-	table = props.pivot_table(values=['Proposal_ID'], index=['FacultyName'], aggfunc={'Proposal_ID': 'count'},observed=False)
-	table.columns=['GCount']
-	new_df = pd.concat([new_df, table],axis=1)
- 
-	# creating the bar plot
-	fig = plt.figure(figsize = (10, 5))
-	plt.bar(table.index, table['GCount'], color ='blue',
-			width = 0.4)
-	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
-	plt.xlabel("Faculty")
-	plt.ylabel("Proposals Funded")
-	plt.savefig('Tables/grant_count.png',bbox_inches='tight',pad_inches=1)
-	plt.close()
-
-	table = props.pivot_table(values=['Allocated Amt'], index=['FacultyName'], aggfunc={'Allocated Amt': 'sum'},observed=False)
-	table.columns=['GAmt']
-	new_df = pd.concat([new_df, table],axis=1)
-
-	# creating the bar plot
-	fig = plt.figure(figsize = (10, 5))
-	plt.bar(table.index, table['GAmt'], color ='blue',
-			width = 0.4)
-	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
-	plt.xlabel("Faculty")
-	plt.ylabel("Grants Amount Allocation")
-	plt.savefig('Tables/grant_amt.png',bbox_inches='tight',pad_inches=1)
 	plt.close()
 	
 	return(new_df)

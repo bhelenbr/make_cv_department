@@ -12,10 +12,13 @@ def main(argv):
 		df = pd.read_excel(source,header=0)
 	except OSError:
 		print("Could not open/read file: " + source)
-		sys.exit()
+		return(pd.DataFrame())
 	
 	df['Current Program'] = df['Current Program'].apply(lambda x: x[(x.find("-")+1):] if isinstance(x, str) else "MS")
 	table = df.pivot_table(values=['Student Name'], index=['FacultyName'], columns=['Current Program'], aggfunc={'Student Name': 'count'},observed=False,fill_value=0)
+	if table.empty:
+		print("No graduate advisees found in file: " + source)
+		return(pd.DataFrame())
 	
 	# Simplify the multindex column names
 	table = table['Student Name']

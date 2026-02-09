@@ -24,7 +24,7 @@ file_source = sys.argv[1]
 df = pd.DataFrame()
 for FacultyName in os.listdir(file_source): # For each faculty member
 	if FacultyName.find(",") > -1 and Path(os.path.join(file_source, FacultyName)).is_dir():
-		print("Reviewing: " + FacultyName)
+		print("Reviewing: " + FacultyName, end="")
 		try:
 			sheet = pd.read_excel(file_source +os.sep +FacultyName+os.sep+folder +os.sep +file, engine='openpyxl')
 			sheet["FacultyName"] = FacultyName

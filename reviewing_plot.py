@@ -20,6 +20,9 @@ def main(argv,years):
 
 	df = df[(df['Start'].apply(lambda x: x.year) >= begin_year)]
 	df = df.reset_index()
+	if df.empty:
+		print("No reviews found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
 
 	table = df.pivot_table(values=['Rounds'], index=['FacultyName'], aggfunc={'Rounds': 'sum'},observed=False)
 	table.columns=['Reviews']

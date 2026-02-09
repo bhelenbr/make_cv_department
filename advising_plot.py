@@ -13,7 +13,7 @@ def main(argv,FacultyNames,years,private):
 		df = pd.read_excel(source)
 	except OSError:
 		print("Could not open/read file: " + source)
-		return(0)
+		return(pd.DataFrame())
 	
 	today = date.today()
 	year = today.year
@@ -38,6 +38,9 @@ def main(argv,FacultyNames,years,private):
 
 	
 	table = df.pivot_table(index=['LN,FN'],columns=['Number'],aggfunc={'Sum of Responses': 'sum','Total Points': 'sum'})		
+	if table.empty:
+		print("No advising evaluations found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
 	
 	fig, ax = plt.subplots(layout='constrained')
 	for count,faculty in enumerate(table.index):

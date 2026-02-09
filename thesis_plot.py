@@ -24,6 +24,9 @@ def main(argv,years):
 
 	df = df[(df['Year'] >= begin_year)]
 	df = df.reset_index()
+	if df.empty:
+		print("No theses found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
 
 	table = df.pivot_table(values=['Student'], index=['FacultyName'], columns=['Degree'], aggfunc={'Student': 'count'},observed=False,fill_value=0)
 
@@ -33,22 +36,21 @@ def main(argv,years):
 
 	fig, ax = plt.subplots(layout='constrained')
 
-	for program in ["MS","PhD"]:
+	table.columns = table.columns.get_level_values('Degree')
+	for program in table.columns:
 		offset = width * multiplier
-		rects = ax.bar(x + offset, table[('Student',   program)], width, label=program)
+		rects = ax.bar(x + offset, table[program], width, label=program)
 		#ax.bar_label(rects, padding=3)
 		multiplier += 1
 
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Theses')
 	ax.set_xticks(x + width, table.index)
-	ax.legend(loc='upper left', ncols=2)
+	ax.legend(loc='upper left', ncols=len(table.columns))
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.savefig('Tables/thesis.png',bbox_inches='tight',pad_inches=1)
 	plt.close()
-	
-	table = table[[('Student','MS'),('Student','PhD')]]
-	table.columns=['MS Theses','PhD Theses']
+
 
 	return(table)
 

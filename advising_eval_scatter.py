@@ -19,7 +19,7 @@ source = sys.argv[1]
 emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 backup_dir = "make_cv/Backups"
 
-df = pd.read_excel(source,skiprows=1,dtype={'ID': str})
+df = pd.read_excel(source,skiprows=1,dtype={'ID': str}, engine="xlrd")
 
 faculty_path = Path(facultyFolder)
 if not faculty_path.is_dir():

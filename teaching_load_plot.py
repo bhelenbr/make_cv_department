@@ -29,6 +29,7 @@ def main(argv,FacultyNames,years):
 	
 	df = df[df['Term'].apply(lambda x: (x > begin_term) & (x <= term))]
 	df.fillna(value={"PI": ""},inplace=True)
+
 	
 	Abbrev = [abbreviate_name(item,first_initial_only=True) for item in FacultyNames]
 	FacultyLookup = dict(zip(Abbrev, FacultyNames))
@@ -38,10 +39,15 @@ def main(argv,FacultyNames,years):
 		df = df[df['PI'].isin(Abbrev)]
 		df['PI'] = df['PI'].apply(lambda x: FacultyLookup[x])
 	
+	if df.empty:
+		print("No teaching records found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
+	
 	# Merge distance sections with section 01
 	df['Section'] = df['Section'].apply(lambda x: x.replace('D','0')[0:2])
 	df.fillna(value={'Enrollment':0},inplace=True)
 	
+
 	# Get only lecture sections
 	lectures = df[df['Component'].apply(lambda x: x == 'LEC')]	
 	#others = df[df['Component'].apply(lambda x: not(x == 'LEC'))]

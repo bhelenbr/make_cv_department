@@ -64,9 +64,9 @@ if [ ! -d Historical/${YEAR} ]; then
   mkdir Historical/${YEAR}
 fi
 mv -n "proposals & grants.xlsx" Historical/${YEAR}
-srs_gather.py "$ARG"
 mv -n "expenditures.xlsx" Historical/${YEAR}
 mv -n "grants.xlsx" Historical/${YEAR}
+proposals_gather.py "$ARG"
 expenditures_gather.py "$ARG"
 grants_gather.py "$ARG"
 cd ..

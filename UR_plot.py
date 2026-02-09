@@ -19,6 +19,10 @@ def main(argv,years):
 	begin_year = year - years
 
 	df = df[(df['Calendar Year'] >= begin_year)]
+	if df.empty:
+		print("No undergraduate research projects found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
+	
 	df.sort_values(by=['Calendar Year','Term'], inplace=True, ascending = [False,True])
 	df = df.reset_index()
 

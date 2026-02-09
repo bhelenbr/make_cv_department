@@ -13,13 +13,17 @@ def main(argv,FacultyNames,years):
 		df = pd.read_excel(source,sheet_name="Sheet1")
 	except OSError:
 		print("Could not open/read file: " + source)
-		return(0)
+		return(pd.DataFrame())
 	
 	# Only plot this year
 	today = date.today()
 	year = int(today.year)
 	begin_year = year - years
 	df = df[df['YEAR'].apply(lambda x: int(x)) >= begin_year]
+
+	if df.empty:
+		print("No advisee records found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
 
 	Abbrev = [abbreviate_name(item,first_initial_only=True) for item in FacultyNames]
 	FacultyLookup = dict(zip(Abbrev, FacultyNames))

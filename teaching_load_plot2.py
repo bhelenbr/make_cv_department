@@ -34,6 +34,10 @@ def main(argv,FacultyNames,years):
 	df['course_section'] = df['course_section'].apply(lambda x: x.replace('D','0')[0:2])
 	df.fillna(value={'enrollment':0},inplace=True)
 	
+	if df.empty:
+		print("No teaching records found in the last " + str(years) + " years.")
+		return(pd.DataFrame())
+	
 	# Get only lecture sections
 	# lectures = df[df['Component'].apply(lambda x: x == 'LEC')]	
 	#others = df[df['Component'].apply(lambda x: not(x == 'LEC'))]

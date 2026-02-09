@@ -34,7 +34,8 @@ from make_cv.service2latex_far import service2latex_far
 from make_cv.reviews2latex_far import reviews2latex_far
 from make_cv.teaching2latex_far import teaching2latex_far
 
-import srs_plot
+import proposal_plot
+import grants_plot
 import UR_plot
 import pubs_plot
 import thesis_plot
@@ -60,15 +61,17 @@ except:
 	pass
 
 # Get list of last names
-names = os.listdir(faculty_source) # For each faculty member
+names = sorted(os.listdir(faculty_source), key=str.lower)
 FacultyNames = []
 for name in names:
-	if name[0].isalnum():
+	if name.find(",") > -1 and Path(faculty_source,name).is_dir():
 		FacultyNames.append(name)	
 
 df = pd.DataFrame();
 
-new_df = srs_plot.main(['srs_plot',gathered_source +os.sep +"Proposals & Grants" +os.sep +'proposals & grants.xlsx'],years)
+new_df = proposal_plot.main(['proposal_plot',gathered_source +os.sep +"Proposals & Grants" +os.sep +'proposals & grants.xlsx'],years)
+df = pd.concat([df, new_df],axis=1)
+new_df = grants_plot.main(['grants_plot',gathered_source +os.sep +"Proposals & Grants" +os.sep +'grants.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
 new_df = UR_plot.main(['UR_plot',gathered_source +os.sep +"Service" +os.sep +'undergraduate research data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
@@ -111,105 +114,105 @@ fteaching = open('Tables/teaching_far.tex', 'a') # file to write
 
 
 br = open('Tables/bibresource.tex','w')
-for FacultyName in os.listdir(faculty_source): # For each faculty member
-	if FacultyName.find(",") > -1 and Path(faculty_source,FacultyName).is_dir():
-		print(FacultyName)
-		headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +FacultyName +'}\n'
-		
-		# Grants
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Proposals & Grants" +os.sep +"proposals & grants.xlsx"
-		pos = fgrants.tell()
-		fgrants.write(headerstring)
-		nrows = grants2latex_far(fgrants,years,filename)
-		if not(nrows):
-			fgrants.seek(pos)
-			fgrants.truncate()
+for FacultyName in FacultyNames: # For each faculty member
+	print(FacultyName)
+	headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +FacultyName +'}\n'
+	
+	# Grants
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Proposals & Grants" +os.sep +"grants.xlsx"
+	pos = fgrants.tell()
+	fgrants.write(headerstring)
+	nrows = grants2latex_far(fgrants,years,filename)
+	if not(nrows):
+		fgrants.seek(pos)
+		fgrants.truncate()
 
-		# Proposals
-		pos = fprops.tell()
-		fprops.write(headerstring)
-		nrows = props2latex_far(fprops,years,filename)	
-		if not(nrows):
-			fprops.seek(pos)
-			fprops.truncate()
-			
-		# Undergraduate Research
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'undergraduate research data.xlsx'
-		pos = fur.tell()
-		fur.write(headerstring)
-		nrows = UR2latex_far(fur,years,filename)	
-		if not(nrows):
-			fur.seek(pos)
-			fur.truncate()
-			
-		# Scholarly Works
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'scholarship.bib'
-		nrecords = [0 for counter in range(len(pubfiles))]
-		if os.path.isfile(filename):
-			ppos = [fpubs[counter].tell() for counter in range(len(pubfiles))]
-			for counter in range(len(pubfiles)):
-				fpubs[counter].write(headerstring)
-				nrecords[counter] = bib2latex_far(fpubs[counter],filename,[pub_categories[counter]],years=years)
-			for counter in range(len(pubfiles)):
-				if not(nrecords[counter]):
-					fpubs[counter].seek(ppos[counter])
-					fpubs[counter].truncate()
-			br.write('\\addbibresource{' +filename +'}\n')
+	# Proposals
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Proposals & Grants" +os.sep +"proposals & grants.xlsx"
+	pos = fprops.tell()
+	fprops.write(headerstring)
+	nrows = props2latex_far(fprops,years,filename)	
+	if not(nrows):
+		fprops.seek(pos)
+		fprops.truncate()
 		
-		# Thesis Publications & Graduate Advisees
-		filename1 = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'current student data.xlsx'
-		filename2 = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'thesis data.xlsx'
-		pos = fthesis.tell()
-		fthesis.write(headerstring)
-		nrows = thesis2latex_far(fthesis,years,filename1,filename2)	
-		if not(nrows):
-			fthesis.seek(pos)
-			fthesis.truncate()	
+	# Undergraduate Research
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'undergraduate research data.xlsx'
+	pos = fur.tell()
+	fur.write(headerstring)
+	nrows = UR2latex_far(fur,years,filename)	
+	if not(nrows):
+		fur.seek(pos)
+		fur.truncate()
 		
-		# Personal Awards
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Awards" +os.sep +'personal awards data.xlsx'
-		pos = fpawards.tell()
-		fpawards.write(headerstring)
-		nrows = personal_awards2latex_far(fpawards,years,filename)	
-		if not(nrows):
-			fpawards.seek(pos)
-			fpawards.truncate()	
-		
-		# Student Awards
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Awards" +os.sep +'student awards data.xlsx'
-		pos = fsawards.tell()
-		fsawards.write(headerstring)
-		nrows = student_awards2latex_far(fsawards,years,filename)	
-		if not(nrows):
-			fsawards.seek(pos)
-			fsawards.truncate()			
+	# Scholarly Works
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'scholarship.bib'
+	nrecords = [0 for counter in range(len(pubfiles))]
+	if os.path.isfile(filename):
+		ppos = [fpubs[counter].tell() for counter in range(len(pubfiles))]
+		for counter in range(len(pubfiles)):
+			fpubs[counter].write(headerstring)
+			nrecords[counter] = bib2latex_far(fpubs[counter],filename,[pub_categories[counter]],years=years)
+		for counter in range(len(pubfiles)):
+			if not(nrecords[counter]):
+				fpubs[counter].seek(ppos[counter])
+				fpubs[counter].truncate()
+		br.write('\\addbibresource{' +filename +'}\n')
+	
+	# Thesis Publications & Graduate Advisees
+	filename1 = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'current student data.xlsx'
+	filename2 = faculty_source +os.sep +FacultyName +os.sep +"Scholarship" +os.sep +'thesis data.xlsx'
+	pos = fthesis.tell()
+	fthesis.write(headerstring)
+	nrows = thesis2latex_far(fthesis,years,filename1,filename2)	
+	if not(nrows):
+		fthesis.seek(pos)
+		fthesis.truncate()	
+	
+	# Personal Awards
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Awards" +os.sep +'personal awards data.xlsx'
+	pos = fpawards.tell()
+	fpawards.write(headerstring)
+	nrows = personal_awards2latex_far(fpawards,years,filename)	
+	if not(nrows):
+		fpawards.seek(pos)
+		fpawards.truncate()	
+	
+	# Student Awards
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Awards" +os.sep +'student awards data.xlsx'
+	pos = fsawards.tell()
+	fsawards.write(headerstring)
+	nrows = student_awards2latex_far(fsawards,years,filename)	
+	if not(nrows):
+		fsawards.seek(pos)
+		fsawards.truncate()			
 
-		# Service Activities
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'service data.xlsx'
-		pos = fservice.tell()
-		fservice.write(headerstring)
-		nrows = service2latex_far(fservice,years,filename)	
-		if not(nrows):
-			fservice.seek(pos)
-			fservice.truncate()
+	# Service Activities
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'service data.xlsx'
+	pos = fservice.tell()
+	fservice.write(headerstring)
+	nrows = service2latex_far(fservice,years,filename)	
+	if not(nrows):
+		fservice.seek(pos)
+		fservice.truncate()
+	
+	# Reviewing Activities
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'reviews data.xlsx'
+	pos = freviews.tell()
+	freviews.write(headerstring)
+	nrows = reviews2latex_far(freviews,years,filename)	
+	if not(nrows):
+		freviews.seek(pos)
+		freviews.truncate()
 		
-		# Reviewing Activities
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Service" +os.sep +'reviews data.xlsx'
-		pos = freviews.tell()
-		freviews.write(headerstring)
-		nrows = reviews2latex_far(freviews,years,filename)	
-		if not(nrows):
-			freviews.seek(pos)
-			freviews.truncate()
-			
-		# Teaching
-		filename = faculty_source +os.sep +FacultyName +os.sep +"Teaching" +os.sep +'teaching evaluation data.xlsx'
-		pos = fteaching.tell()
-		fteaching.write(headerstring)
-		nrows = teaching2latex_far(fteaching,years,filename,Anonymous_Flag)	
-		if not(nrows):
-			fteaching.seek(pos)
-			fteaching.truncate()
+	# Teaching
+	filename = faculty_source +os.sep +FacultyName +os.sep +"Teaching" +os.sep +'teaching evaluation data.xlsx'
+	pos = fteaching.tell()
+	fteaching.write(headerstring)
+	nrows = teaching2latex_far(fteaching,years,filename,Anonymous_Flag)	
+	if not(nrows):
+		fteaching.seek(pos)
+		fteaching.truncate()
 			
 br.close()
 fgrants.close()
