@@ -19,15 +19,34 @@ source = sys.argv[1]
 emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 backup_dir = Path("make_cv") / "Backups"
 
+# "Term", "Description", "School", "Descr2", "Catalog", "Section", "Component", "Mode", "Descr 3", "LN,FN", "ID", "Ct Evals", "Tot Enrl", "Participant", "Number", "A1 count", "A1 percent", "A2 count", "A2 percent", "A3 count", "A3 percent", "A4 count", "A4 percent", "A5 count", "A5 percent", "NA count", "NA percent", "Q Mean", "Question", "Class Nbr", "Comb Sects ID", "Descr"
 df = pd.read_excel(source, skiprows=1, engine="xlrd")
-new_columns = [ "STRM","term","school","course","course_num","course_section","component","course_title","INSTR_NA","ID","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
+df.drop(columns=['A1 percent','A2 percent','A3 percent','A4 percent','A5 percent','NA percent'], axis=1, inplace=True)
+
 try:
-	df.columns = new_columns
+	# new_columns = [ "STRM","term","school","course","course_num","course_section","component","course_title","INSTR_NA","ID","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
+	#df.columns = new_columns
+	new_column_names = {"Term": "STRM", "Description": "term", "Descr2": "course_sec", "Catalog": "course_num", "Section": "course_section", "Component": "component", "Mode": "mode", "Descr 3": "course_title", "LN,FN": "INSTR_NA", "Ct Evals":"count_evals", "Tot Enrl": "enrollment", "Participant": "Particip", "Number":"question", "A1 count": "a1", "A2 count": "a2", "A3 count":"a3", "A4 count":"a4", "A5 count":"a5", "NA count": "na", "Q Mean": "Calculated Mean", "Question": "question_text", "Descr": "combined_course_num"}
+	df.rename(columns=new_column_names, inplace=True)
 except Exception:
 	print("Error: unexpected columns in source file; column assignment failed")
 	sys.exit(2)
 df["Weighted Average"] = df["count_evals"]*df["Calculated Mean"]
 df["combined_course_num"] = df["combined_course_num"].fillna(df["course_num"])
+def _normalize_combined_course_num(val):
+	parts = [p.strip() for p in val.split('/')]
+	suffixes = []
+	for p in parts:
+		m = re.search(r'-(.+)$', p)
+		if m:
+			suffixes.append(m.group(1))
+	if len(suffixes) > 1 and len(set(suffixes)) > 1:
+		print(f"Warning: course suffixes don't match in '{val}': {suffixes}")
+
+	s = re.sub(r'-[^/]+','', val)
+	return s
+
+df["combined_course_num"] = df["combined_course_num"].apply(_normalize_combined_course_num)  # Normalize whitespace and suffixes
 
 faculty_path = Path(facultyFolder)
 if not faculty_path.is_dir():
@@ -61,7 +80,7 @@ for faculty_dir in faculty_path.iterdir():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
-				result = merge_and_dedup([existing_data, entries])
+				result = merge_and_dedup([entries, existing_data], keep_only_first_cols=True)
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					result.to_excel(writer, sheet_name="Data", index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]} entries')

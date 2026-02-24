@@ -4,6 +4,7 @@ import os,sys,platform,shutil
 import pandas as pd
 import re
 import xlrd
+import argparse
 from pathlib import Path
 from datetime import date
 
@@ -11,16 +12,20 @@ from make_cv.stringprotect import abbreviate_name_list
 from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
-source = sys.argv[1]
-facultyFolder = sys.argv[2]
-df = pd.read_excel(source,skiprows=1,dtype={'ID': str}, engine="xlrd")
-destination = Path("Service") / "advisee counts.xlsx"
-backup_dir = "make_cv/Backups"
-emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
+parser = argparse.ArgumentParser(description='This script outputs scatters the number of undergraduate advisees during [YEAR]')
+parser.add_argument('-y','--year', type=int, default=date.today().year, help='the year that is being processed (defaults to current year)')
+parser.add_argument('inputfile', help='the input excel file name')
+parser.add_argument('faculty', help='the faculty folder path')
+args = parser.parse_args()
 
-today = date.today()
-year = today.year
-df["YEAR"] = year
+source = args.inputfile
+facultyFolder = args.faculty
+df = pd.read_excel(source,skiprows=1,dtype={'Advisor ID': int}, engine="xlrd")
+df = df[df["Career"]=="UGRD"]
+
+destination = Path("Service") / "advisee counts.xlsx"
+backup_dir = Path("make_cv") / "Backups"
+emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 
 faculty_path = Path(facultyFolder)
 if not faculty_path.is_dir():
@@ -45,16 +50,20 @@ for faculty_dir in faculty_path.iterdir():
 			continue
 
 		# Get entries for this faculty
-		entries=df.loc[df["ID"].astype(int) == employee_id]
-		if entries.shape[0] > 0:
-			toAppend = entries[["Advisor Name","Count Distinct Name","YEAR"]]
+		entries=df[df["Advisor ID"] == employee_id]
+		nentries = entries.shape[0]
+		if nentries > 0:
+			toAppend = pd.DataFrame({
+				"Year": [args.year],
+				"Count": [nentries]
+			})
 			filename = faculty_dir / destination
 
 			if filename.is_file():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				existing_data = pd.read_excel(filename)
-				result = merge_and_dedup([existing_data, toAppend]).sort_values(by=['YEAR'],ascending=[True])
+				result = merge_and_dedup([existing_data, toAppend],ignore_cols=["Count"]).sort_values(by=['Year'],ascending=[True])
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
 				print(f'Appended {result.shape[0]-existing_data.shape[0]} entries')

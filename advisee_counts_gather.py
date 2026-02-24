@@ -26,6 +26,7 @@ for FacultyName in os.listdir(file_source):
             path = os.path.join(file_source, FacultyName, folder, file)
             # try reading the standard sheet name used by advisee_counts
             sheet = pd.read_excel(path, engine='openpyxl', sheet_name="Sheet1")
+            sheet['Advisor Name'] = FacultyName
             collected.append(sheet)
             print(" - read " + str(sheet.shape[0]) + " rows")
         except FileNotFoundError:

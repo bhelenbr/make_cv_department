@@ -60,7 +60,7 @@ def main(argv,FacultyNames,years,private):
 	table['avg11'] = np.divide(table[('Total Points',11)],table[('Sum of Responses',11)])
 	if (private):
 		table.sort_values(by=['avg11'], inplace=True,ascending = True)
-		table.to_csv('advising_index.csv', sep=',', encoding='utf-8')
+		table.index.to_series().to_csv('advising_index.csv', index=False, header=False, encoding='utf-8')
 	
 	x = np.arange(table.shape[0])  # the label locations
 	width = 0.25  # the width of the bars

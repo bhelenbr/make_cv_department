@@ -3,10 +3,10 @@
 # First argument is the directory containing the University Data Files
 # Second argument is the department director
 employee_id_scatter.py "$1"/Faculty\ List* "$2"
-advisee_counts_scatter.py "$1"/CU_FAR_UGRAD_ADVISOR_CT_* "$2"
 advising_eval_scatter.py "$1"/CU_FAR_ADVIS_EVAL_* "$2"
+advisee_counts_scatter.py -y 2025 "$1"/CU_FAR_ADVISEE_LIST_* "$2"
 current_grads_scatter.py "$1"/CU_FAR_ADVISEE_LIST_* "$2"
-teaching_eval_scatter.py "$1"/CU_FAR_CRSE_EVA_* "$2"
+teaching_eval_scatter.py "$1"/CU_FAR_CRSE_EVAL_* "$2"
 UR_scatter.py "$1"/CU_FAR_PROJ_CLASS_* "$2"
 expenditures_scatter.py "$1"/CU_FAR_EXPENDITURES_* "$2"
 proposals_scatter.py "$1"/CU_FAR_PROPS_* "$2"

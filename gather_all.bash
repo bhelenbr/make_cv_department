@@ -111,4 +111,3 @@ fi
 mv -n "teaching evaluation data.xlsx" Historical/${YEAR}
 teaching_eval_gather.py "$ARG"
 cd ..
-cd ..

@@ -13,7 +13,7 @@ def merge_keep_old_columns(df_new, df_old, cols_from_old=[]):
     return df_merged
         
 
-def merge_and_dedup(dfs, ignore_cols=None, keep="first"):
+def merge_and_dedup(dfs, ignore_cols=None, keep="first", keep_only_first_cols=False):
     """
     Combine an iterable/list of DataFrames by stacking rows and drop duplicates.
 
@@ -25,6 +25,10 @@ def merge_and_dedup(dfs, ignore_cols=None, keep="first"):
         Columns to ignore when identifying duplicates
     keep : {"first", "last", False}
         Which duplicate to keep (passed to drop_duplicates)
+    keep_only_first_cols : bool
+        If True, only keep columns that appear in the first non-empty dataframe
+        from `dfs` (preserves their order). This is useful when later frames
+        add extra columns you don't want included in the combined result.
 
     Returns
     -------
@@ -65,6 +69,12 @@ def merge_and_dedup(dfs, ignore_cols=None, keep="first"):
         combined = frames[0].copy().reset_index(drop=True)
     else:
         combined = pd.concat(frames, ignore_index=True)
+
+    # Optionally restrict to columns present in the first (non-empty) frame
+    if keep_only_first_cols and len(frames) >= 1:
+        first_cols = list(frames[0].columns)
+        cols_to_keep = [c for c in first_cols if c in combined.columns]
+        combined = combined.loc[:, cols_to_keep].copy()
 
     # Columns to use for duplicate detection
     subset_cols = [c for c in combined.columns if c not in ignore_cols]

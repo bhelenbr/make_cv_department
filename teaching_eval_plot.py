@@ -46,7 +46,8 @@ def main(argv,FacultyNames,years,private):
 	table['q14av'] = np.divide(table[('Weighted Average',14)],table[('count_evals',14)])
 	if (private):
 		table.sort_values(by=['q19av'], inplace=True,ascending = True)
-		table.to_csv('teaching_index.csv', sep=',', encoding='utf-8')
+		# Output the ordered list of instructor names (one per line)
+		table.index.to_series().to_csv('teaching_index.csv', index=False, header=False, encoding='utf-8')
 	else:
 		table.sort_values(by=['INSTR_NA'], inplace=True,ascending = True)	
 

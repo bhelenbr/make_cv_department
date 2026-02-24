@@ -42,7 +42,7 @@ import thesis_plot
 import current_grads_plot
 import service_plot
 import reviewing_plot
-import prospective_plot2
+import prospective_plot
 import teaching_eval_plot
 import teaching_load_plot2
 import advising_plot
@@ -85,7 +85,7 @@ new_df = service_plot.main(['service_plot',gathered_source +os.sep +"Service" +o
 df = pd.concat([df, new_df],axis=1)
 new_df = reviewing_plot.main(['reviewing_plot',gathered_source +os.sep +"Service" +os.sep +'reviews data.xlsx'],years)
 df = pd.concat([df, new_df],axis=1)
-new_df = prospective_plot2.main(['prospective_plot',gathered_source +os.sep +"Service" +os.sep +'prospective visit data.xlsx'],FacultyNames,years)
+new_df = prospective_plot.main(['prospective_plot',gathered_source +os.sep +"Service" +os.sep +'prospective visit data.xlsx'],FacultyNames,years)
 df = pd.concat([df, new_df],axis=1)
 new_df = teaching_eval_plot.main(['teaching_eval_plot',gathered_source +os.sep +"Teaching" +os.sep +'teaching evaluation data.xlsx'],FacultyNames,years,Anonymous_Flag)
 df = pd.concat([df, new_df],axis=1)
