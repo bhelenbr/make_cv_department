@@ -19,34 +19,35 @@ source = sys.argv[1]
 emplid_file = Path("make_cv") / "PersonalData" / "personal_data.txt"
 backup_dir = Path("make_cv") / "Backups"
 
-# "Term", "Description", "School", "Descr2", "Catalog", "Section", "Component", "Mode", "Descr 3", "LN,FN", "ID", "Ct Evals", "Tot Enrl", "Participant", "Number", "A1 count", "A1 percent", "A2 count", "A2 percent", "A3 count", "A3 percent", "A4 count", "A4 percent", "A5 count", "A5 percent", "NA count", "NA percent", "Q Mean", "Question", "Class Nbr", "Comb Sects ID", "Descr"
+
+
 df = pd.read_excel(source, skiprows=1, engine="xlrd")
-df.drop(columns=['A1 percent','A2 percent','A3 percent','A4 percent','A5 percent','NA percent'], axis=1, inplace=True)
+
+# Teaching evaluation data has the following columns:
+# "Term", "Description", "School", "Descr2", "Catalog", "Section", "Component", "Mode", "Descr 3", "LN,FN", "ID", "Ct Evals", "Tot Enrl", "Participant", "Number", "A1 count", "A1 percent", "A2 count", "A2 percent", "A3 count", "A3 percent", "A4 count", "A4 percent", "A5 count", "A5 percent", "NA count", "NA percent", "Q Mean", "Question", "Class Nbr", "Comb Sects ID", "Descr"
+# df.drop(columns=['School','A1 percent','A2 percent','A3 percent','A4 percent','A5 percent','NA percent',"A1 count", "A2 count", "A3 count", "A4 count", "A5 count", "NA count"], axis=1, inplace=True)
+# new_column_names = {"Term": "STRM", "Description": "term", "Descr2": "num_sec", "Catalog": "course_num", "Section": "course_section", "Component": "component", "Mode": "mode", "Descr 3": "course_title", "LN,FN": "INSTR_NA", "Ct Evals":"count", "Tot Enrl": "enrollment", "Participant": "role", "Number":"question", "Q Mean": "mean", "Question": "question_text", "Descr": "combined_num_sec"}
+
+# CU_FAR_ALL_CRSES has the following columns:
+# Term	Term Description	School	Course and Session Description	Subject	Catalog	Section	Component	Class Description	Instructor ID	Instructor Name	Role	Mode	Comb Sects ID	Ct Evals	Tot Enrl	Participant	Number	A1 count	A2 count	A3 count	A4 count	A5 count	NA count	NA percent	Q Mean	Question	Comb Sects ID	Descr
+df["course_num"] = df['Subject'].str.strip() + df['Catalog'].str.strip()
+df["num_sec"] = df['course_num'] + "-" + df['Section']
+df.drop(columns=['Course and Session Description','Subject','Catalog','A1 count','A2 count','A3 count','A4 count','A5 count','NA count','Comb Sects ID','School','Participant'], axis=1, inplace=True)
+new_column_names = {"Term": "STRM", "Term Description": "term", "Section": "course_section", "Component": "component", "Mode": "mode", "Class Description": "course_title", "Instructor ID": "ID", "Instructor Name": "INSTR_NA", "Ct Evals":"count", "Tot Enrl": "enrollment", "Role": "role", "Number":"question", "Q Mean": "mean", "Question": "question_text", "Descr": "combined_num_sec"}
+
 
 try:
-	# new_columns = [ "STRM","term","school","course","course_num","course_section","component","course_title","INSTR_NA","ID","count_evals","enrollment","Particip","question","a1","a1_pct","a2","a2_pct","a3","a3_pct","a4","a4_pct","a5","a5_pct","na","na_pct","Calculated Mean","Question","combined_course_num"]
-	#df.columns = new_columns
-	new_column_names = {"Term": "STRM", "Description": "term", "Descr2": "course_sec", "Catalog": "course_num", "Section": "course_section", "Component": "component", "Mode": "mode", "Descr 3": "course_title", "LN,FN": "INSTR_NA", "Ct Evals":"count_evals", "Tot Enrl": "enrollment", "Participant": "Particip", "Number":"question", "A1 count": "a1", "A2 count": "a2", "A3 count":"a3", "A4 count":"a4", "A5 count":"a5", "NA count": "na", "Q Mean": "Calculated Mean", "Question": "question_text", "Descr": "combined_course_num"}
 	df.rename(columns=new_column_names, inplace=True)
 except Exception:
 	print("Error: unexpected columns in source file; column assignment failed")
 	sys.exit(2)
-df["Weighted Average"] = df["count_evals"]*df["Calculated Mean"]
-df["combined_course_num"] = df["combined_course_num"].fillna(df["course_num"])
-def _normalize_combined_course_num(val):
-	parts = [p.strip() for p in val.split('/')]
-	suffixes = []
-	for p in parts:
-		m = re.search(r'-(.+)$', p)
-		if m:
-			suffixes.append(m.group(1))
-	if len(suffixes) > 1 and len(set(suffixes)) > 1:
-		print(f"Warning: course suffixes don't match in '{val}': {suffixes}")
 
-	s = re.sub(r'-[^/]+','', val)
-	return s
+df["combined_num_sec"] = df["combined_num_sec"].fillna(df["num_sec"])
+df["combined_course_num"] = df["combined_num_sec"].apply(lambda x: re.sub(r'-[^/]+','', x))  # Normalize whitespace and suffixes
+df.drop(columns=['question_text','INSTR_NA','num_sec'], inplace=True)
 
-df["combined_course_num"] = df["combined_course_num"].apply(_normalize_combined_course_num)  # Normalize whitespace and suffixes
+# Remove any rows where enrollment is zero or missing
+df = df[df['enrollment'].fillna(0).astype(int) != 0]
 
 faculty_path = Path(facultyFolder)
 if not faculty_path.is_dir():
@@ -74,17 +75,35 @@ for faculty_dir in faculty_path.iterdir():
 		# Get entries for this faculty
 		entries=df.loc[df["ID"].astype(int) == employee_id]
 		if entries.shape[0] > 0:
-			destination = faculty_dir / "Teaching" / "teaching evaluation data.xlsx"
+			# Pivot so each question becomes its own set of columns (values: count, mean)
+			table = entries.pivot_table(index=['STRM', 'term','course_num', 'course_section','combined_course_num','combined_num_sec','course_title','component','mode','role','enrollment'], columns='question',values=['count','mean'], aggfunc='sum')
+			# Convert the pivoted MultiIndex columns into flat single-level column names
+			# and turn the index levels into regular columns so the output is a normal DataFrame
+			table = table.reset_index()
+			# Flatten any MultiIndex columns produced by pivot_table
+			table.columns = [
+				str(col[0]) +'_' +str(col[1]) if isinstance(col[1], int) else str(col[0])
+				for col in table.columns
+			]
+			# Reorder columns to have the index columns first, followed by the pivoted question columns
+			new_order = table.columns[:11].tolist()  # Start with the first 10 index columns
+			for q in range(1,21):
+				new_order.append(f"count_{q}")
+				new_order.append(f"mean_{q}")
+				# append any remaining columns not covered (safety)
+			new_order += [c for c in table.columns if c not in new_order]
+			table = table.loc[:, new_order]
 
+			destination = faculty_dir / "Teaching" / "teaching evaluation data.xlsx"
 			if destination.is_file():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
-				result = merge_and_dedup([entries, existing_data], keep_only_first_cols=True)
+				result = merge_and_dedup([table, existing_data], keep_only_first_cols=True)
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					result.to_excel(writer, sheet_name="Data", index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]} entries')
 			else:
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
-					entries.to_excel(writer, sheet_name="Data", index=False)
+					table.to_excel(writer, sheet_name="Data", index=False)
 				print(f'New {entries.shape[0]} entries')
