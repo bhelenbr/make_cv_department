@@ -21,7 +21,7 @@ backup_dir = Path("make_cv") / "Backups"
 
 
 
-df = pd.read_excel(source, skiprows=1, engine="xlrd")
+df = pd.read_excel(source, skiprows=1, engine="xlrd", dtype={"Catalog": str})
 
 # Teaching evaluation data has the following columns:
 # "Term", "Description", "School", "Descr2", "Catalog", "Section", "Component", "Mode", "Descr 3", "LN,FN", "ID", "Ct Evals", "Tot Enrl", "Participant", "Number", "A1 count", "A1 percent", "A2 count", "A2 percent", "A3 count", "A3 percent", "A4 count", "A4 percent", "A5 count", "A5 percent", "NA count", "NA percent", "Q Mean", "Question", "Class Nbr", "Comb Sects ID", "Descr"
@@ -35,7 +35,7 @@ df["num_sec"] = df['course_num'] + "-" + df['Section']
 for col in ['Course and Session Description','Subject','Catalog','A1 count','A2 count','A3 count','A4 count','A5 count','NA count','Comb Sects ID','School','Participant']:
 	if col in df.columns:
 		df.drop(columns=[col], axis=1, inplace=True)
-new_column_names = {"Term": "STRM", "Term Description": "term", "Section": "course_section", "Component": "component", "Mode": "mode", "Class Description": "course_title", "Instructor ID": "ID", "Instructor Name": "INSTR_NA", "Ct Evals":"count", "Total Enrollment": "enrollment", "Role": "role", "Question Number":"question", "Q Mean": "mean", "Question": "question_text", "Combined Sections Descr": "combined_num_sec"}
+new_column_names = {"Term": "STRM", "Term Description": "term", "Section": "course_section", "Component": "component", "Instruct Mode": "mode", "Class Description": "course_title", "Instructor ID": "ID", "Instructor Name": "INSTR_NA", "Count Evals":"count", "Enrollment Total": "enrollment", "Instructor Role": "role", "Question Number":"question", "Q Mean": "mean", "Question": "question_text", "Combined Sections Descr": "combined_num_sec"}
 
 try:
 	df.rename(columns=new_column_names, inplace=True)
@@ -100,7 +100,7 @@ for faculty_dir in faculty_path.iterdir():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
-				result = merge_and_dedup([table, existing_data], keep_only_first_cols=True)
+				result = merge_and_dedup([table, existing_data], keep_only_first_cols=True, ignore_cols=[col for col in table.columns if col.startswith("count_") or col.startswith("mean_")])
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					result.to_excel(writer, sheet_name="Data", index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]} entries')

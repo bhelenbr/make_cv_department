@@ -21,6 +21,7 @@ def main(argv,FacultyNames,years):
 	year = today.year
 	begin_year = year - years
 	
+	# STRM	term	course_num	course_section	combined_course_num	combined_num_sec	course_title	component	mode	role	enrollment	count_1	mean_1	count_2	mean_2	count_3	mean_3	count_4	mean_4	count_5	mean_5	count_6	mean_6	count_7	mean_7	count_8	mean_8	count_9	mean_9	count_10	mean_10	count_11	mean_11	count_12	mean_12	count_13	mean_13	count_14	mean_14	count_15	mean_15	count_16	mean_16	count_17	mean_17	count_18	mean_18	count_19	mean_19	count_20	mean_20	FacultyName
 	# STRM, term, school, course, course_num, course_section, course_title, INSTR_NA, ID, count_evals, enrollment, Particip, question, a1, a1_pct, a2, a2_pct, a3, a3_pct, a4, a4_pct, a5, a5_pct, na, na_pct, Calculated Mean, Question, combined_course_num, Weighted Average, FacultyName"
 	df = df[df['term'].apply(lambda x: int(x[-4:])) >= begin_year]
 		
@@ -28,7 +29,7 @@ def main(argv,FacultyNames,years):
 	if (len(FacultyNames) > 0):
 		df = df[df['FacultyName'].isin(FacultyNames)]
 	
-	df = df[df['question'] == 1]
+	df = df[~df['component'].isin(['DIS','IND','PRO','RSC','TUT','THE'])]
 
 	# Merge distance sections with section 01
 	df['course_section'] = df['course_section'].apply(lambda x: x.replace('D','0')[0:2])

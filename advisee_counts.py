@@ -19,7 +19,7 @@ def main(argv,FacultyNames,years):
 	today = date.today()
 	year = int(today.year)
 	begin_year = year - years
-	df = df[df['Year'].apply(lambda x: int(x)) >= begin_year]
+	df = df[df['YEAR'].apply(lambda x: int(x)) >= begin_year]
 
 	if df.empty:
 		print("No advisee records found in the last " + str(years) + " years.")
@@ -34,8 +34,8 @@ def main(argv,FacultyNames,years):
 		df = df[df['Advisor Name'].isin(Abbrev)]
 		df['Advisor Name'] = df['Advisor Name'].apply(lambda x: FacultyLookup[x])
 	
-	counts = df.groupby(['Advisor Name'])['Count'].sum().to_frame(name='Advisees')
-	
+	counts = df.groupby(['Advisor Name'])['Count Distinct Name'].sum().to_frame(name='Advisees')
+
 	x = np.arange(counts.shape[0])  # the label locations
 	width = 0.5  # the width of the bars
 	fig, ax = plt.subplots(layout='constrained')
