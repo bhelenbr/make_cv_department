@@ -21,7 +21,7 @@ backup_dir = Path("make_cv") / "Backups"
 
 
 
-df = pd.read_excel(source, skiprows=1, engine="xlrd", dtype={"Catalog": str})
+df = pd.read_excel(source, skiprows=1, engine="xlrd", dtype={"Catalog": str,"Section": str})
 
 # Teaching evaluation data has the following columns:
 # "Term", "Description", "School", "Descr2", "Catalog", "Section", "Component", "Mode", "Descr 3", "LN,FN", "ID", "Ct Evals", "Tot Enrl", "Participant", "Number", "A1 count", "A1 percent", "A2 count", "A2 percent", "A3 count", "A3 percent", "A4 count", "A4 percent", "A5 count", "A5 percent", "NA count", "NA percent", "Q Mean", "Question", "Class Nbr", "Comb Sects ID", "Descr"
@@ -86,21 +86,13 @@ for faculty_dir in faculty_path.iterdir():
 				str(col[0]) +'_' +str(col[1]) if isinstance(col[1], int) else str(col[0])
 				for col in table.columns
 			]
-			# Reorder columns to have the index columns first, followed by the pivoted question columns
-			new_order = table.columns[:11].tolist()  # Start with the first 10 index columns
-			for q in range(1,21):
-				new_order.append(f"count_{q}")
-				new_order.append(f"mean_{q}")
-				# append any remaining columns not covered (safety)
-			new_order += [c for c in table.columns if c not in new_order]
-			table = table.loc[:, new_order]
 
 			destination = faculty_dir / "Teaching" / "teaching evaluation data.xlsx"
 			if destination.is_file():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(destination, str(backup_path))
 				existing_data = pd.read_excel(destination, sheet_name="Data")
-				result = merge_and_dedup([table, existing_data], keep_only_first_cols=True, ignore_cols=[col for col in table.columns if col.startswith("count_") or col.startswith("mean_")])
+				result = merge_and_dedup([table, existing_data], keep_only_first_cols=False, ignore_cols=[col for col in table.columns if col.startswith("count_") or col.startswith("mean_")])
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					result.to_excel(writer, sheet_name="Data", index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]} entries')
@@ -108,3 +100,5 @@ for faculty_dir in faculty_path.iterdir():
 				with pd.ExcelWriter(destination, engine="openpyxl", mode="w") as writer:
 					table.to_excel(writer, sheet_name="Data", index=False)
 				print(f'New {entries.shape[0]} entries')
+		else:
+			print(' (no matching entries in source file)')
