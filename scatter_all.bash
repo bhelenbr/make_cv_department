@@ -2,6 +2,9 @@
 
 set -e
 
+# Get current year
+YEAR=$(date +%Y)
+
 # First argument is the directory containing the University Data Files
 # Second argument is the department director
 
@@ -21,7 +24,7 @@ fi
 
 if ls "$1"/CU_FAR_ADVISEE_LIST_* 1> /dev/null 2>&1; then
     echo "Processing CU_FAR_ADVISEE_LIST file for advisee_counts_scatter.py and current_grads_scatter.py"
-    advisee_counts_scatter.py -y 2025 "$1"/CU_FAR_ADVISEE_LIST_* "$2"
+    advisee_counts_scatter.py "$1"/CU_FAR_ADVISEE_LIST_* "$2"
     current_grads_scatter.py "$1"/CU_FAR_ADVISEE_LIST_* "$2"
 else
     echo "Warning: CU_FAR_ADVISEE_LIST file not found in $1, skipping advisee_counts_scatter.py and current_grads_scatter.py"
@@ -68,16 +71,16 @@ else
     echo "Warning: CU_FAR_AWARDS file not found in $1, skipping grants_scatter.py"
 fi
 
-if ls "$1"/FAR\ 2025* 1> /dev/null 2>&1; then
-    echo "Processing FAR 2025 file for UR_honors_scatter.py"
-    UR_honors_scatter.py -y 2025 "$1"/FAR\ 2025* "$2"
+if ls "$1"/FAR\ $YEAR* 1> /dev/null 2>&1; then
+    echo "Processing FAR $YEAR file for UR_honors_scatter.py"
+    UR_honors_scatter.py -y $YEAR "$1"/FAR\ $YEAR* "$2"
 else
-    echo "Warning: FAR 2025 file not found in $1, skipping UR_honors_scatter.py"
+    echo "Warning: FAR $YEAR file not found in $1, skipping UR_honors_scatter.py"
 fi
 
 if ls "$1"/McNair* 1> /dev/null 2>&1; then
     echo "Processing McNair file for UR_mcnair_scatter.py"
-    UR_mcnair_scatter.py -y 2025 "$1"/McNair* "$2"
+    UR_mcnair_scatter.py -y $YEAR "$1"/McNair* "$2"
 else
     echo "Warning: McNair file not found in $1, skipping UR_mcnair_scatter.py"
 fi
@@ -91,7 +94,7 @@ fi
 
 if ls "$1"/Service\ Master* 1> /dev/null 2>&1; then
     echo "Processing Service Master file for service_scatter.py"
-    service_scatter.py -y 2025 "$1"/Service\ Master* "$2"
+    service_scatter.py -y $YEAR "$1"/Service\ Master* "$2"
 else
     echo "Warning: Service Master file not found in $1, skipping service_scatter.py"
 fi

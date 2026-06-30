@@ -48,6 +48,8 @@ theses = theses[theses['Status'].str.match('Published by ProQuest')]
 theses['Degree'] = theses['Degree'].apply(lambda x: x.replace("Master of Arts", "MA"))
 theses['Degree'] = theses['Degree'].apply(lambda x: x.replace("Master of Science", "MS"))
 theses['Degree'] = theses['Degree'].apply(lambda x: x.replace("Doctor of Philosophy", "PhD"))
+theses["Advisor 1"] = theses["Advisor 1"].apply(lambda x: x.replace(", Dr. ", ", ") if pd.notna(x) else x)
+theses["Advisor 2"] = theses["Advisor 2"].apply(lambda x: x.replace(", Dr. ", ", ") if pd.notna(x) else x)
 theses["Advisor 1"] = theses["Advisor 1"].apply(lambda x: abbreviate_name(x,first_initial_only=True))
 theses["Advisor 2"] = theses["Advisor 2"].apply(lambda x: abbreviate_name(x,first_initial_only=True) if pd.notna(x) else x)
 theses['Student'] = theses['Student Last Name'] + ", " + theses['Student First Name']

@@ -13,10 +13,11 @@ from make_cv.copy_with_timestamp import copy_with_timestamp
 from merge_df import merge_and_dedup
 
 parser = argparse.ArgumentParser(description='This script outputs scatters the number of undergraduate advisees during [YEAR]')
-parser.add_argument('-y','--year', type=int, default=date.today().year, help='the year that is being processed (defaults to current year)')
 parser.add_argument('inputfile', help='the input excel file name')
 parser.add_argument('faculty', help='the faculty folder path')
 args = parser.parse_args()
+
+current_month, current_year = date.today().month, date.today().year
 
 source = args.inputfile
 facultyFolder = args.faculty
@@ -54,7 +55,8 @@ for faculty_dir in faculty_path.iterdir():
 		nentries = entries.shape[0]
 		if nentries > 0:
 			toAppend = pd.DataFrame({
-				"Year": [args.year],
+				"Month": [current_month],
+				"Year": [current_year],
 				"Count": [nentries]
 			})
 			filename = faculty_dir / destination

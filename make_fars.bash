@@ -1,8 +1,23 @@
 #!/bin/zsh
 
-for file in [A-Z]?*; do
-	echo "$file" 
-	cd "$file/make_cv/FAR"
-	make_far "$@"
-	cd ../../..
+if (( $# < 2 )); then
+  echo "Usage: $0 <string> <dir> [dir ...]" >&2
+  echo "  <string>  passed as the first argument to test_cv.py" >&2
+  echo "  <dir>     directory or directories to process" >&2
+  exit 1
+fi
+
+arg="$1"
+shift
+args=(${(z)arg})
+
+for file in "$@"; do
+  echo "$file"
+  if [[ -d "$file/make_cv/FAR" ]]; then
+    cd "$file/make_cv/FAR" || exit 1
+    test_far.py "${args[@]}"
+    cd - >/dev/null || exit 1
+  else
+    echo "Skipping missing directory: $file/make_cv/FAR" >&2
+  fi
 done
