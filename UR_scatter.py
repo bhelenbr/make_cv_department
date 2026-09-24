@@ -65,13 +65,18 @@ for faculty_dir in faculty_path.iterdir():
 			if filename.is_file():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
-				existing_data = pd.read_excel(filename, sheet_name='Data')
+				# Read every sheet so the Notes sheet is preserved (same as UR_honors/UR_mcnair scripts)
+				excelFile = pd.read_excel(filename, sheet_name=None)
+				existing_data = excelFile.get("Data", pd.DataFrame())
+				notes = excelFile.get("Notes", pd.DataFrame())
 				result = merge_and_dedup([existing_data, toAppend], ignore_cols=['Title']).sort_values(by=['Calendar Year','Term','Program Type','Students'], ascending=[True,False,True,True])
-				with pd.ExcelWriter(filename) as writer:
+				with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
+					notes.to_excel(writer, sheet_name="Notes", index=False)
 					result.to_excel(writer, sheet_name='Data', index=False)
 				print(f'Appended {result.shape[0] - existing_data.shape[0]}')
 			else:
-				with pd.ExcelWriter(filename) as writer:
+				with pd.ExcelWriter(filename, engine="openpyxl", mode="w") as writer:
+					pd.DataFrame().to_excel(writer, sheet_name="Notes", index=False)
 					toAppend.to_excel(writer, sheet_name='Data', index=False)
 				print(f'New {toAppend.shape[0]}')
 		else:

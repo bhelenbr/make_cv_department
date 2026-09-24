@@ -6,7 +6,6 @@ import pandas as pd
 import sys
 from datetime import date
 
-from merge_df import merge_and_dedup
 
 def main(argv,years):
 	source = argv[1] # file to read
@@ -75,7 +74,8 @@ def main(argv,years):
 		table_univ = pd.DataFrame()
 
 	
-	new_df = merge_and_dedup([table_prof,table_com,table_univ])
+	# Join side by side on FacultyName (stacking rows would lose the faculty index)
+	new_df = pd.concat([table_prof,table_com,table_univ],axis=1)
 	return(new_df)
 	
 if __name__ == "__main__":

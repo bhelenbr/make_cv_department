@@ -15,7 +15,7 @@ def main(argv,FacultyNames,years):
 		df = pd.read_excel(source,dtype={'course_section': str})
 	except OSError:
 		print("Could not open/read file: " + source)
-		return(0)
+		return(pd.DataFrame())
 		
 	today = date.today()
 	year = today.year

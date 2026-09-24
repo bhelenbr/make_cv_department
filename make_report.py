@@ -225,6 +225,7 @@ fpawards.close()
 fsawards.close()
 fservice.close()
 freviews.close()
+fteaching.close()
 
 os.system('xelatex annual_report.tex')
 os.system('biber annual_report.bcf')

@@ -72,7 +72,9 @@ for faculty_dir in faculty_path.iterdir():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				existing = pd.read_excel(filename)
-				result = merge_and_dedup([existing, entries]).sort_values(by=["Year"])
+				# Visits/Deposits are running totals: a re-run replaces that year's row
+				# with the new counts instead of adding a second row for the same year
+				result = merge_and_dedup([entries, existing], ignore_cols=["Visits", "Deposits"]).sort_values(by=["Year"])
 				print(f'Appended {result.shape[0] - existing.shape[0]}')
 			else:
 				result = entries.sort_values(by=["Year"])

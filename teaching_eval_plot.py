@@ -16,7 +16,7 @@ def main(argv,FacultyNames,years,private):
 		df = pd.read_excel(source)
 	except OSError:
 		print("Could not open/read file: " + source)
-		return(0)
+		return(pd.DataFrame())
 		
 	today = date.today()
 	year = today.year
@@ -83,6 +83,8 @@ def main(argv,FacultyNames,years,private):
 	plt.xlabel("Faculty")
 	plt.savefig('Tables/teaching_averages.png',bbox_inches='tight',pad_inches=1)
 	plt.close()
+
+	return(table[['q14av','q19av','q20av']])
 	
 if __name__ == "__main__":
 	FacultyNames = ["Achuthan, Ajit","Fite, Kevin","Mastorakos, Ioannis"]
