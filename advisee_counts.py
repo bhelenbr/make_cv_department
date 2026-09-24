@@ -34,6 +34,8 @@ def main(argv,FacultyNames,years):
 		df = df[df['Advisor Name'].isin(Abbrev)]
 		df['Advisor Name'] = df['Advisor Name'].apply(lambda x: FacultyLookup[x])
 	
+	# Advisee counts are snapshots, so use only each advisor's most recent year (don't add years together)
+	df = df[df['YEAR'] == df.groupby('Advisor Name')['YEAR'].transform('max')]
 	counts = df.groupby(['Advisor Name'])['Count Distinct Name'].sum().to_frame(name='Advisees')
 
 	x = np.arange(counts.shape[0])  # the label locations

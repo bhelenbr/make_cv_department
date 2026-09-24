@@ -17,7 +17,7 @@ parser.add_argument('inputfile', help='the input excel file name')
 parser.add_argument('faculty', help='the faculty folder path')
 args = parser.parse_args()
 
-current_month, current_year = date.today().month, date.today().year
+current_year = date.today().year
 
 source = args.inputfile
 facultyFolder = args.faculty
@@ -54,10 +54,10 @@ for faculty_dir in faculty_path.iterdir():
 		entries=df[df["Advisor ID"] == employee_id]
 		nentries = entries.shape[0]
 		if nentries > 0:
+			# One row per year, using the column names advisee_counts.py reads
 			toAppend = pd.DataFrame({
-				"Month": [current_month],
-				"Year": [current_year],
-				"Count": [nentries]
+				"YEAR": [current_year],
+				"Count Distinct Name": [nentries]
 			})
 			filename = faculty_dir / destination
 
@@ -65,7 +65,13 @@ for faculty_dir in faculty_path.iterdir():
 				backup_path = faculty_dir / backup_dir
 				copy_with_timestamp(filename, str(backup_path))
 				existing_data = pd.read_excel(filename)
-				result = merge_and_dedup([existing_data, toAppend],ignore_cols=["Count"]).sort_values(by=['Year'],ascending=[True])
+				# Convert files written in the Month/Year/Count format (keep the latest month of each year)
+				if "Month" in existing_data.columns:
+					existing_data = existing_data.sort_values(by=["Year", "Month"]).drop_duplicates(subset=["Year"], keep="last")
+					existing_data = existing_data.drop(columns=["Month"])
+				existing_data = existing_data.rename(columns={"Year": "YEAR", "Count": "Count Distinct Name"})
+				# A re-run in the same year replaces that year's count with the new one
+				result = merge_and_dedup([toAppend, existing_data],ignore_cols=["Count Distinct Name"]).sort_values(by=['YEAR'],ascending=[True])
 				with pd.ExcelWriter(filename) as writer:
 					result.to_excel(writer,index=False)
 				print(f'Appended {result.shape[0]-existing_data.shape[0]} entries')
