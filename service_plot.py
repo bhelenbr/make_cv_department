@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 from datetime import date
+from faculty_folder import display_labels
 
 
 def main(argv,years):
@@ -32,7 +33,7 @@ def main(argv,years):
 
 		# creating the bar plot
 		fig = plt.figure(figsize = (10, 5))
-		plt.bar(table_prof.index, table_prof['Prof. Service'], color ='blue',width = 0.4)
+		plt.bar(display_labels(table_prof.index), table_prof['Prof. Service'], color ='blue',width = 0.4)
 		plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 		plt.xlabel("Faculty")
 		plt.ylabel("Professional Service Hours")
@@ -48,7 +49,7 @@ def main(argv,years):
 
 		# creating the bar plot
 		fig = plt.figure(figsize = (10, 5))
-		plt.bar(table_com.index, table_com['Comm. Service'], color ='blue',width = 0.4)
+		plt.bar(display_labels(table_com.index), table_com['Comm. Service'], color ='blue',width = 0.4)
 		plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 		plt.xlabel("Faculty")
 		plt.ylabel("Community Service Hours")
@@ -63,7 +64,7 @@ def main(argv,years):
 
 		# creating the bar plot
 		fig = plt.figure(figsize = (10, 5))
-		plt.bar(table_univ.index, table_univ['U. Service'], color ='blue',width = 0.4)
+		plt.bar(display_labels(table_univ.index), table_univ['U. Service'], color ='blue',width = 0.4)
 		plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 		plt.xlabel("Faculty")
 		plt.ylabel("University Service Hours")

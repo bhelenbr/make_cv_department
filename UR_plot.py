@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 from datetime import date
+from faculty_folder import display_labels
 
 def main(argv,years):
 	source = argv[1] # file to read
@@ -31,7 +32,7 @@ def main(argv,years):
  
 	# creating the bar plot
 	fig = plt.figure(figsize = (10, 5))
-	plt.bar(table.index, table['URCount'], color ='blue',
+	plt.bar(display_labels(table.index), table['URCount'], color ='blue',
 			width = 0.4)
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.xlabel("Faculty")

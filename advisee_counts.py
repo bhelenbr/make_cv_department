@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from datetime import date
 from make_cv.stringprotect import abbreviate_name
+from faculty_folder import display_labels, match_faculty
 
 def main(argv,FacultyNames,years):
 	source = argv[1] # file to read
@@ -25,14 +26,13 @@ def main(argv,FacultyNames,years):
 		print("No advisee records found in the last " + str(years) + " years.")
 		return(pd.DataFrame())
 
-	Abbrev = [abbreviate_name(item,first_initial_only=True) for item in FacultyNames]
-	FacultyLookup = dict(zip(Abbrev, FacultyNames))
-	df['Advisor Name'] = df['Advisor Name'].apply(lambda x : abbreviate_name(x,first_initial_only=True))
-
-	# Filter out to only department faculty
+	# Filter out to only department faculty.  Advisor Name is the folder name set by
+	# advisee_counts_gather.py (may include " - EmployeeID"), so people with the same
+	# name stay separate.
 	if (len(FacultyNames) > 0):
-		df = df[df['Advisor Name'].isin(Abbrev)]
-		df['Advisor Name'] = df['Advisor Name'].apply(lambda x: FacultyLookup[x])
+		df = df.copy()
+		df['Advisor Name'] = match_faculty(df['Advisor Name'], FacultyNames)
+		df = df[df['Advisor Name'].notna()]
 	
 	# Advisee counts are snapshots, so use only each advisor's most recent year (don't add years together)
 	df = df[df['YEAR'] == df.groupby('Advisor Name')['YEAR'].transform('max')]
@@ -45,7 +45,7 @@ def main(argv,FacultyNames,years):
 
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Number of Advisees')
-	ax.set_xticks(x, counts.index)
+	ax.set_xticks(x, display_labels(counts.index))
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.savefig('Tables/advisee_count.png',bbox_inches='tight',pad_inches=1)
 	plt.close()

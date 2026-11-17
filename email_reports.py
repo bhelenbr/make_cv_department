@@ -9,6 +9,8 @@ import time
 import traceback
 import shutil
 
+from faculty_folder import split_folder_name, find_faculty_row
+
 # -----------------------------
 # Configuration
 # -----------------------------
@@ -97,9 +99,11 @@ base_path = Path(file_destination)
 for faculty_dir in base_path.iterdir():
     if not faculty_dir.is_dir() or faculty_dir.name.find(",") == -1:
         continue
-    FacultyName = faculty_dir.name
+    FolderName = faculty_dir.name
+    # Folder may be "Last, First" or "Last, First - EmployeeID"
+    FacultyName, _ = split_folder_name(FolderName)
     print(f'Sending e-mail for {FacultyName}: ', end="")
-    entries = df[df['Name'] == FacultyName]
+    entries = find_faculty_row(df, FolderName, 'Name', 'EMPLID')
     if not entries.shape[0] == 1:
         print('Uh-oh' +FacultyName)
         skipped += 1
@@ -122,7 +126,7 @@ for faculty_dir in base_path.iterdir():
     # Attachments
     # -----------------------------
     
-    attachments = [Path(base_path,FacultyName +os.sep +SUPERVISOR_REPORT_PATH),  Path(base_path,FacultyName +os.sep +ANNUAL_REPORT_PATH), Path(base_path,FacultyName +os.sep +EXCEL_FILE_PATH), Path(base_path,FacultyName +os.sep +TEACHING_INDEX_PATH), Path(base_path,FacultyName +os.sep +ADVISING_INDEX_PATH)]
+    attachments = [faculty_dir / SUPERVISOR_REPORT_PATH, faculty_dir / ANNUAL_REPORT_PATH, faculty_dir / EXCEL_FILE_PATH, faculty_dir / TEACHING_INDEX_PATH, faculty_dir / ADVISING_INDEX_PATH]
     
     for att in attachments:
         if not att.exists():

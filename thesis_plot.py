@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import sys
 from datetime import date
+from faculty_folder import display_labels
 
 def main(argv,years):
 	source = argv[1] # file to read
@@ -45,7 +46,7 @@ def main(argv,years):
 
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Theses')
-	ax.set_xticks(x + width, table.index)
+	ax.set_xticks(x + width, display_labels(table.index))
 	ax.legend(loc='upper left', ncols=len(table.columns))
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.savefig('Tables/thesis.png',bbox_inches='tight',pad_inches=1)

@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from datetime import date
 from make_cv.stringprotect import abbreviate_name
+from faculty_folder import display_labels, match_faculty
 
 def main(argv,FacultyNames,years,private):
 	source = argv[1] # file to read
@@ -24,13 +25,14 @@ def main(argv,FacultyNames,years,private):
 	df = df[df['Term'].apply(lambda x: int(x/10)-400+2000) >= begin_year]
 	#print(df.shape[0])
 	
-	Abbrev = [abbreviate_name(item,first_initial_only=True) for item in FacultyNames]
-	FacultyLookup = dict(zip(Abbrev, FacultyNames))
-	df['LN,FN'] = df['LN,FN'].apply(lambda x: abbreviate_name(x,first_initial_only=True))	
-	# Filter out to only department faculty
+	# Filter out to only department faculty.  Prefer the FacultyName column added by
+	# advising_eval_gather.py (the folder name, may include " - EmployeeID") so people
+	# with the same name stay separate; fall back to the LN,FN name in the source data.
 	if (len(FacultyNames) > 0):
-		df = df[df['LN,FN'].isin(Abbrev)]
-		df['LN,FN'] = df['LN,FN'].apply(lambda x: FacultyLookup[x])
+		key = 'FacultyName' if 'FacultyName' in df.columns else 'LN,FN'
+		df = df.copy()
+		df['LN,FN'] = match_faculty(df[key], FacultyNames)
+		df = df[df['LN,FN'].notna()]
 		
 	df['Sum of Responses'] = df['Question 0'] + df['Question 1'] + df['Question 2'] + df['Question 3'] + df['Question 4'] + df['Question 5']
 	df['Total Points'] = df['Question 1'] + 2*df['Question 2'] + 3*df['Question 3'] + 4*df['Question 4'] + 5*df['Question 5']
@@ -43,13 +45,14 @@ def main(argv,FacultyNames,years,private):
 		return(pd.DataFrame())
 	
 	fig, ax = plt.subplots(layout='constrained')
+	labels = display_labels(table.index)
 	for count,faculty in enumerate(table.index):
 		responses = []
 		for question in range(1,12):
 			responses.append(table.loc[faculty,('Total Points',question)]/table.loc[faculty,('Sum of Responses',question)])
-		ax.plot(range(1,12),responses,label=faculty)
+		ax.plot(range(1,12),responses,label=labels[count])
 		if (not(private)):
-			ax.text(11,table.loc[faculty,('Total Points',11)]/table.loc[faculty,('Sum of Responses',11)],faculty,fontsize='xx-small')
+			ax.text(11,table.loc[faculty,('Total Points',11)]/table.loc[faculty,('Sum of Responses',11)],labels[count],fontsize='xx-small')
 	#ax.legend(fontsize='xx-small',ncols=2)
 	ax.set_ylabel('Average Score')
 	ax.set_xlabel('Question #')
@@ -60,7 +63,7 @@ def main(argv,FacultyNames,years,private):
 	table['avg11'] = np.divide(table[('Total Points',11)],table[('Sum of Responses',11)])
 	if (private):
 		table.sort_values(by=['avg11'], inplace=True,ascending = True)
-		table.index.to_series().to_csv('advising_index.csv', index=False, header=False, encoding='utf-8')
+		pd.Series(display_labels(table.index)).to_csv('advising_index.csv', index=False, header=False, encoding='utf-8')
 	
 	x = np.arange(table.shape[0])  # the label locations
 	width = 0.25  # the width of the bars
@@ -76,7 +79,7 @@ def main(argv,FacultyNames,years,private):
 	ax.set_ylabel('Average Score')
 	ax.set_ylim([3,5])
 	if (not(private)):
-		ax.set_xticks(x + width, table.index)
+		ax.set_xticks(x + width, display_labels(table.index))
 	ax.legend(loc='upper left', ncols=2)
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.savefig('Tables/advising5_11.png',bbox_inches='tight',pad_inches=1)

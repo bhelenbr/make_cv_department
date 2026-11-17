@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from datetime import date
 from make_cv.stringprotect import abbreviate_name
+from faculty_folder import display_labels, match_faculty
 
 # STRM	term	course_num	course_section	combined_course_num	combined_num_sec	course_title	component	mode	role	enrollment	count_1	mean_1	count_2	mean_2	count_3	mean_3	count_4	mean_4	count_5	mean_5	count_6	mean_6	count_7	mean_7	count_8	mean_8	count_9	mean_9	count_10	mean_10	count_11	mean_11	count_12	mean_12	count_13	mean_13	count_14	mean_14	count_15	mean_15	count_16	mean_16	count_17	mean_17	count_18	mean_18	count_19	mean_19	count_20	mean_20	FacultyName
 
@@ -27,14 +28,12 @@ def main(argv,FacultyNames,years,private):
 		print("No teaching evaluations found in the last " + str(years) + " years.")
 		return(pd.DataFrame())
 	
-	Abbrev = [abbreviate_name(item,first_initial_only=True) for item in FacultyNames]
-	FacultyLookup = dict(zip(Abbrev, FacultyNames))
-	df['FacultyName'] = df['FacultyName'].apply(lambda x: abbreviate_name(x,first_initial_only=True))	
-	
-	# Filter out to only department faculty
+	# Filter out to only department faculty.  FacultyName is the folder name
+	# (may include " - EmployeeID"), so people with the same name stay separate.
 	if (len(FacultyNames) > 0):
-		df = df[df['FacultyName'].isin(Abbrev)]
-		df['FacultyName'] = df['FacultyName'].apply(lambda x: FacultyLookup[x])	
+		df = df.copy()
+		df['FacultyName'] = match_faculty(df['FacultyName'], FacultyNames)
+		df = df[df['FacultyName'].notna()]
 	
 	# components: CLN -clinical DIS-discussion FLD-fieldwork IND-independent study LAB-lab LEC-lecture PHY-physical education PRA-practacum PRO-project RSC-research SEM-seminar THE-thesis TUT-tutorial						
 	df = df[~df['component'].isin(['DIS','IND','PRO','RSC','TUT','THE'])]	
@@ -56,7 +55,7 @@ def main(argv,FacultyNames,years,private):
 	if (private):
 		table.sort_values(by=['q19av'], inplace=True,ascending = True)
 		# Output the ordered list of instructor names (one per line)
-		table.index.to_series().to_csv('teaching_index.csv', index=False, header=False, encoding='utf-8')
+		pd.Series(display_labels(table.index)).to_csv('teaching_index.csv', index=False, header=False, encoding='utf-8')
 	else:
 		table.sort_values(by=['FacultyName'], inplace=True,ascending = True)	
 
@@ -77,7 +76,7 @@ def main(argv,FacultyNames,years,private):
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Weighted Average Teaching Evaluation')
 	if (not(private)):
-		ax.set_xticks(x + width, table.index)
+		ax.set_xticks(x + width, display_labels(table.index))
 	ax.legend(loc='upper left', ncols=2)
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.xlabel("Faculty")

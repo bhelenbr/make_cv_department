@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 from datetime import date
 from make_cv.stringprotect import abbreviate_name
+from faculty_folder import display_labels
 
 def main(argv,FacultyNames,years):
 
@@ -70,7 +71,7 @@ def main(argv,FacultyNames,years):
 	
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Sections / Classes Taught')
-	ax.set_xticks(x+width/2, section_counts.index)
+	ax.set_xticks(x+width/2, display_labels(section_counts.index))
 	#ax.set_yticks(range(20))
 	ax.legend(loc='upper left', ncols=2)
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
@@ -88,7 +89,7 @@ def main(argv,FacultyNames,years):
 
 	# Add some text for labels, title and custom x-axis tick labels, etc.
 	ax.set_ylabel('Students Taught')
-	ax.set_xticks(x, enrollments.index)
+	ax.set_xticks(x, display_labels(enrollments.index))
 	plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
 	plt.savefig('Tables/class_enrollments.png',bbox_inches='tight',pad_inches=1)
 	plt.close()

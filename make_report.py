@@ -8,6 +8,7 @@ import platform
 import shutil
 import openpyxl
 import argparse
+from faculty_folder import display_labels, split_folder_name
 from pathlib import Path
 
 parser = argparse.ArgumentParser(description='This script creates the annual report and assoicated data')
@@ -66,6 +67,9 @@ FacultyNames = []
 for name in names:
 	if name.find(",") > -1 and Path(faculty_source,name).is_dir():
 		FacultyNames.append(name)	
+# Names to print in the report: "Last, First" without the employee ID, unless two
+# faculty share a name, in which case the ID is kept so they can be told apart.
+DisplayNames = dict(zip(FacultyNames, display_labels(FacultyNames)))
 
 df = pd.DataFrame();
 
@@ -95,6 +99,11 @@ new_df = advising_plot.main(['advising_plot',gathered_source +os.sep +"Service" 
 df = pd.concat([df, new_df],axis=1)
 new_df = advisee_counts.main(['advisee_counts',gathered_source +os.sep +"Service" +os.sep +'advisee counts.xlsx'],FacultyNames,years)
 df = pd.concat([df, new_df],axis=1)
+# faculty_data.xlsx: readable names as the row label, employee ID in its own column
+key_index = [str(k) for k in df.index]
+df.index = [DisplayNames.get(k, display_labels([k])[0]) for k in key_index]
+df.index.name = 'Faculty'
+df.insert(0, 'EMPLID', [split_folder_name(k)[1] for k in key_index])
 df.to_excel('faculty_data.xlsx')
 
 # open files
@@ -116,7 +125,7 @@ fteaching = open('Tables/teaching_far.tex', 'a') # file to write
 br = open('Tables/bibresource.tex','w')
 for FacultyName in FacultyNames: # For each faculty member
 	print(FacultyName)
-	headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +FacultyName +'}\n'
+	headerstring = '\n\\vspace{\\baselineskip}\n{\\bf ' +DisplayNames[FacultyName] +'}\n'
 	
 	# Grants
 	filename = faculty_source +os.sep +FacultyName +os.sep +"Proposals & Grants" +os.sep +"grants.xlsx"
