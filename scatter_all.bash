@@ -45,12 +45,12 @@ if [[ -z "$DATA_DIR" || -z "$DEPARTMENT_DIRECTOR" ]]; then
     exit 1
 fi
 
-if ls "$DATA_DIR"/CU_BH_MONTHLY_FACULTY_DATA* 1> /dev/null 2>&1; then
-    echo "Processing Faculty HR file using sync_faculty_folders.py"
-    sync_faculty_folders.py "$DATA_DIR"/CU_BH_MONTHLY_FACULTY_DATA* "$DEPARTMENT_DIRECTOR"
-else
-    echo "Warning: Faculty List file not found in $DATA_DIR, skipping employee_id_scatter.py"
-fi
+# if ls "$DATA_DIR"/CU_BH_MONTHLY_FACULTY_DATA* 1> /dev/null 2>&1; then
+#     echo "Processing Faculty HR file using sync_faculty_folders.py"
+#     sync_faculty_folders.py "$DATA_DIR"/CU_BH_MONTHLY_FACULTY_DATA* "$DEPARTMENT_DIRECTOR"
+# else
+#     echo "Warning: Faculty List file not found in $DATA_DIR, skipping employee_id_scatter.py"
+# fi
 
 # if ls "$DATA_DIR"/Faculty\ List* 1> /dev/null 2>&1; then
 #     echo "Processing Faculty List file for employee_id_scatter.py"
