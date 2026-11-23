@@ -183,28 +183,60 @@ def lookup_orcid(given, family, affiliation, args):
 # Scopus
 # -------------------------------
 
-def scopus_api_key(args):
+def scopus_api_keys(args):
+    """All available Elsevier keys, in order (pybliometrics allows a comma list)."""
     if args.scopus_key:
-        return args.scopus_key
-    if os.environ.get("SCOPUS_API_KEY"):
-        return os.environ["SCOPUS_API_KEY"]
-    for cfg in (Path.home() / ".config" / "pybliometrics.cfg", Path.home() / ".pybliometrics" / "config.ini"):
-        if cfg.is_file():
-            cp = configparser.ConfigParser()
-            cp.read(cfg)
-            key = cp.get("Authentication", "APIKey", fallback="")
-            if key:
-                return key.split(",")[0].strip()
-    return None
+        raw = args.scopus_key
+    elif os.environ.get("SCOPUS_API_KEY"):
+        raw = os.environ["SCOPUS_API_KEY"]
+    else:
+        raw = ""
+        for cfg in (Path.home() / ".config" / "pybliometrics.cfg", Path.home() / ".pybliometrics" / "config.ini"):
+            if cfg.is_file():
+                cp = configparser.ConfigParser()
+                cp.read(cfg)
+                raw = cp.get("Authentication", "APIKey", fallback="")
+                if raw:
+                    break
+    return [k.strip() for k in raw.split(",") if k.strip()]
+
+
+_last_scopus_call = 0.0
 
 
 def scopus_query(query, args):
-    headers = {"X-ELS-APIKey": args.scopus_key_resolved, "Accept": "application/json"}
-    if args.scopus_insttoken:
-        headers["X-ELS-Insttoken"] = args.scopus_insttoken
-    r = requests.get(SCOPUS_SEARCH, params={"query": query, "count": 25}, headers=headers, timeout=30)
-    if r.status_code in (401, 403):
-        raise RuntimeError(f"Scopus refused the request ({r.status_code}): {r.text[:200]}")
+    """Run one Author Search, pacing requests and handling 429 throttling.
+
+    Elsevier returns 429 both for going too fast (retry after a pause) and
+    for an exhausted weekly quota (X-RateLimit-Remaining = 0).  On an
+    exhausted quota the next key from the list is tried, if there is one.
+    """
+    global _last_scopus_call
+    for attempt in range(6):
+        wait = args.scopus_delay - (time.time() - _last_scopus_call)
+        if wait > 0:
+            time.sleep(wait)
+        headers = {"X-ELS-APIKey": args.scopus_key_resolved[0], "Accept": "application/json"}
+        if args.scopus_insttoken:
+            headers["X-ELS-Insttoken"] = args.scopus_insttoken
+        r = requests.get(SCOPUS_SEARCH, params={"query": query, "count": 25}, headers=headers, timeout=30)
+        _last_scopus_call = time.time()
+        if r.status_code in (401, 403):
+            raise RuntimeError(f"Scopus refused the request ({r.status_code}): {r.text[:200]}")
+        if r.status_code != 429:
+            break
+        remaining = r.headers.get("X-RateLimit-Remaining")
+        reset = r.headers.get("X-RateLimit-Reset")
+        if remaining == "0":
+            when = time.strftime("%a %b %d %H:%M", time.localtime(int(reset))) if reset and reset.isdigit() else "unknown"
+            if len(args.scopus_key_resolved) > 1:
+                print(f"   Scopus quota used up for key ...{args.scopus_key_resolved[0][-4:]}; trying next key")
+                args.scopus_key_resolved.pop(0)
+                continue
+            raise RuntimeError(f"Scopus quota exhausted for this API key (resets {when})")
+        pause = float(r.headers.get("Retry-After") or 0) or min(2 ** attempt, 30)
+        print(f"   Scopus is throttling requests; waiting {pause:.0f} s")
+        time.sleep(pause)
     r.raise_for_status()
     entries = r.json().get("search-results", {}).get("entry", []) or []
     return [e for e in entries if "error" not in e]
@@ -404,6 +436,7 @@ def main():
     p.add_argument("--scopus-insttoken", default=os.environ.get("SCOPUS_INSTTOKEN"), help="Elsevier institutional token")
     p.add_argument("-s", "--scraper-id", help="ScraperAPI key for Google Scholar if Google blocks requests")
     p.add_argument("--delay", type=float, default=2.0, help="seconds to wait between Google Scholar searches")
+    p.add_argument("--scopus-delay", type=float, default=0.5, help="minimum seconds between Scopus requests")
     p.add_argument("--write", action="store_true", help="write IDs into each folder's personal_data.txt")
     p.add_argument("--min-confidence", choices=["high", "medium", "ambiguous"], default="high",
                    help="lowest confidence written with --write (default high)")
@@ -416,7 +449,7 @@ def main():
     if bad:
         sys.exit(f"Unknown source(s): {', '.join(bad)}")
     if "scopus" in sources:
-        args.scopus_key_resolved = scopus_api_key(args)
+        args.scopus_key_resolved = scopus_api_keys(args)
         if not args.scopus_key_resolved:
             print("No Scopus API key found (--scopus-key, $SCOPUS_API_KEY or ~/.config/pybliometrics.cfg); skipping Scopus.")
             sources.remove("scopus")
@@ -452,7 +485,7 @@ def main():
                 found, conf = "", "error"
                 row[label], row[f"{label}_match"], row[f"{label}_candidates"] = "", "error", str(exc)[:300]
                 print(f"   {label} lookup failed: {exc}")
-                if src == "scopus" and "refused" in str(exc):
+                if src == "scopus" and ("refused" in str(exc) or "quota" in str(exc)):
                     print("   Disabling Scopus for the rest of the run.")
                     disabled.add(src)
                 elif src == "scholar" and "MaxTries" in type(exc).__name__ + str(exc):
